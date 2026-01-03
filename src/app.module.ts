@@ -1,4 +1,9 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { join } from 'path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -8,6 +13,7 @@ import emailConfig from './config/emailConfig';
 import databaseConfig from './config/databaseConfig';
 import { validationSchema } from './config/validationSchema';
 import { UserEntity } from './users/entities/user.entity';
+import { LoggerMiddleware, LoggerMiddleware2 } from './logger.middleware';
 
 // 환경 파일 경로 설정
 const nodeEnv = process.env.NODE_ENV || 'development';
@@ -55,4 +61,11 @@ console.log('🔍 NODE_ENV:', nodeEnv);
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoggerMiddleware, LoggerMiddleware2)
+      // .exclude({ path: '/users', method: RequestMethod.POST })
+      .forRoutes('/users');
+  }
+}
