@@ -16,6 +16,10 @@ import authConfig from './config/authConfig';
 import { validationSchema } from './config/validationSchema';
 import { UserEntity } from './users/entities/user.entity';
 import { LoggerMiddleware, LoggerMiddleware2 } from './logger.middleware';
+import { AppService } from './app.service';
+import { AppController } from './app.controller';
+import { WinstonModule } from 'nest-winston';
+import winston from 'winston';
 
 // 환경 파일 경로 설정
 const nodeEnv = process.env.NODE_ENV || 'development';
@@ -60,9 +64,22 @@ console.log('🔍 NODE_ENV:', nodeEnv);
     }),
     UsersModule,
     AuthModule,
+
+    WinstonModule.forRoot({
+      transports: [
+        new winston.transports.Console({
+          level: process.env.NODE_ENV === 'production' ? 'info' : 'silly',
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.ms(),
+            winston.format.json(),
+          ),
+        }),
+      ],
+    }),
   ],
-  controllers: [],
-  providers: [],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
