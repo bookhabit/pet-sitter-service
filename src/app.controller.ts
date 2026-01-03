@@ -1,4 +1,4 @@
-import { Controller, Get, Inject } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Inject } from '@nestjs/common';
 import { AppService } from './app.service';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
@@ -14,6 +14,12 @@ export class AppController {
   getHello(): string {
     this.printWinstonLog();
     return this.appService.getHello();
+  }
+
+  @Get('/error')
+  getError(foo: any): string {
+    new BadRequestException();
+    return foo.bar();
   }
 
   private printWinstonLog() {

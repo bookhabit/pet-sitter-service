@@ -10,6 +10,8 @@ async function bootstrap() {
         ? ['error', 'warn', 'log']
         : ['error', 'warn', 'log', 'verbose', 'debug'],
   });
+
+  // 전역 파이프 설정
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,

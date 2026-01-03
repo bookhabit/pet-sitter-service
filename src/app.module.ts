@@ -20,6 +20,7 @@ import { AppService } from './app.service';
 import { AppController } from './app.controller';
 import { WinstonModule } from 'nest-winston';
 import winston from 'winston';
+import { ExceptionModule } from './common/exception.module';
 
 // 환경 파일 경로 설정
 const nodeEnv = process.env.NODE_ENV || 'development';
@@ -64,6 +65,7 @@ console.log('🔍 NODE_ENV:', nodeEnv);
     }),
     UsersModule,
     AuthModule,
+    ExceptionModule, // 전역 예외 필터 모듈
 
     WinstonModule.forRoot({
       transports: [
