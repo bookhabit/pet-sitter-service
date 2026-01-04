@@ -21,6 +21,7 @@ import { AppController } from './app.controller';
 import { WinstonModule } from 'nest-winston';
 import winston from 'winston';
 import { ExceptionModule } from './common/exception.module';
+import { LoggingModule } from './logging/logging.module';
 
 // 환경 파일 경로 설정
 const nodeEnv = process.env.NODE_ENV || 'development';
@@ -66,7 +67,7 @@ console.log('🔍 NODE_ENV:', nodeEnv);
     UsersModule,
     AuthModule,
     ExceptionModule, // 전역 예외 필터 모듈
-
+    LoggingModule,
     WinstonModule.forRoot({
       transports: [
         new winston.transports.Console({
