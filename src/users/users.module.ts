@@ -8,10 +8,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { CreateUserHandler } from './handlers/create-user.handler';
 import { UserCreatedHandler } from './handlers/user-created.handler';
+import { GetUserInfoHandler } from './handlers/get-user-info.handler';
 
 @Module({
   controllers: [UsersController],
-  providers: [UsersService, CreateUserHandler, UserCreatedHandler],
+  providers: [
+    UsersService,
+    CreateUserHandler,
+    UserCreatedHandler,
+    GetUserInfoHandler,
+  ],
   imports: [
     CqrsModule, // CQRS 모듈 추가
     EmailModule,

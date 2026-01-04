@@ -15,7 +15,7 @@ import {
   Headers,
   UseGuards,
 } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login-user.dto';
@@ -25,11 +25,13 @@ import { UserInfo } from './UserInfo';
 import { AuthService } from 'src/auth/auth.service';
 import { AuthGuard } from 'src/auth/guard';
 import { CreateUserCommand } from './commands/create-user.command';
+import { GetUserInfoQuery } from './queries/get-user-info.query';
 
 @Controller('users')
 export class UsersController {
   constructor(
     private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
     private readonly usersService: UsersService,
     private readonly authService: AuthService,
   ) {}
@@ -75,6 +77,7 @@ export class UsersController {
   @UseGuards(AuthGuard)
   @Get(':id')
   async getUserInfo(@Param('id') userId: string): Promise<UserInfo> {
-    return this.usersService.getUserInfo(userId);
+    // CQRS 패턴: QueryBus를 통해 쿼리 전달
+    return this.queryBus.execute(new GetUserInfoQuery(userId));
   }
 }
