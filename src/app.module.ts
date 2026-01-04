@@ -7,6 +7,8 @@ import {
 import { join } from 'path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { TerminusModule } from '@nestjs/terminus';
+import { HttpModule } from '@nestjs/axios';
 
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
@@ -23,6 +25,7 @@ import winston from 'winston';
 import { ExceptionModule } from './common/exception.module';
 import { LoggingModule } from './logging/logging.module';
 import { TaskModule } from './task/task.module';
+import { HealthCheckController } from './health/health.controller';
 
 // 환경 파일 경로 설정
 const nodeEnv = process.env.NODE_ENV || 'development';
@@ -70,6 +73,8 @@ console.log('🔍 NODE_ENV:', nodeEnv);
     ExceptionModule, // 전역 예외 필터 모듈
     LoggingModule,
     TaskModule, // 태스크 스케줄링 모듈
+    TerminusModule, // 헬스 체크 모듈
+    HttpModule, // HTTP 요청 모듈
     WinstonModule.forRoot({
       transports: [
         new winston.transports.Console({
@@ -83,7 +88,7 @@ console.log('🔍 NODE_ENV:', nodeEnv);
       ],
     }),
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthCheckController],
   providers: [AppService],
 })
 export class AppModule implements NestModule {
