@@ -8,9 +8,51 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String      @id @default(uuid())
   email     String   @unique
-  name      String?
+  full_name      String
+  password      String
+  roles       Role[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+enum Role {
+  OWNER
+  SITTER
+  ADMIN
+}
+
+model Job{
+  id String @id @default(uuid())
+  creator_user_id  String
+  start_time DateTime
+  end_time DateTime
+  activity String
+  dog Dog
+}
+
+model Dog{
+  id String @id @default(uuid())
+  name String
+  age Int
+  breed String
+  size String
+}
+
+model JobApplication {
+  id String @id @default(uuid())
+  status ApproveStatus
+  user User @relation(fields: [user_id], references: [id])
+  job Job @relation(fields: [job_id], references: [id])
+  user_id String // foreign key reference to User.id 지원한 사용자 고유 식별자
+  job_id String // foreign key reference to Job.id 구인공고 고유 식별자
+}
+
+
+enum ApproveStatus {
+  COMPLETE
+  PENDING
+  CANCELLED
+}
+
