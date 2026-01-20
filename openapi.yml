@@ -82,6 +82,11 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Job'
+    delete:
+      summary: Delete Job
+      responses:
+        '204':
+          description: No Content
   /jobs/{id}:
     parameters:
       - schema:
