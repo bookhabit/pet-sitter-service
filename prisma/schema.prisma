@@ -15,6 +15,12 @@ model User {
   roles       Role[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // 관계: User creates Job (1:N)
+  createdJobs Job[] @relation("JobCreator")
+  
+  // 관계: User applies JobApplication (1:N)
+  jobApplications JobApplication[]
 }
 
 enum Role {
@@ -23,30 +29,55 @@ enum Role {
   ADMIN
 }
 
-model Job{
+model Job {
   id String @id @default(uuid())
   creator_user_id  String
   start_time DateTime
   end_time DateTime
   activity String
-  dog Dog
+  
+  // 관계: Job belongs to User (N:1)
+  creator User @relation("JobCreator", fields: [creator_user_id], references: [id])
+  
+  // 관계: Job contains Dog (1:1)
+  dog_id String @unique
+  dog Dog @relation(fields: [dog_id], references: [id])
+  
+  // 관계: Job has JobApplications (1:N)
+  jobApplications JobApplication[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model Dog{
+model Dog {
   id String @id @default(uuid())
   name String
   age Int
   breed String
   size String
+  
+  // 관계: Dog belongs to Job (1:1)
+  job Job?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model JobApplication {
   id String @id @default(uuid())
   status ApproveStatus
+  
+  // 관계: JobApplication belongs to User (N:1)
+  user_id String
   user User @relation(fields: [user_id], references: [id])
+  
+  // 관계: JobApplication belongs to Job (N:1)
+  job_id String
   job Job @relation(fields: [job_id], references: [id])
-  user_id String // foreign key reference to User.id 지원한 사용자 고유 식별자
-  job_id String // foreign key reference to Job.id 구인공고 고유 식별자
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 

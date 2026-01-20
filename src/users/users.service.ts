@@ -10,7 +10,7 @@ export class UsersService {
     return this.prisma.user.findMany();
   }
 
-  async findOne(id: number): Promise<User | null> {
+  async findOne(id: string): Promise<User | null> {
     return this.prisma.user.findUnique({
       where: { id },
     });
@@ -22,14 +22,14 @@ export class UsersService {
     });
   }
 
-  async create(data: { email: string; name?: string }): Promise<User> {
+  async create(data: { email: string; full_name: string; password: string }): Promise<User> {
     return this.prisma.user.create({
       data,
     });
   }
 
   async update(
-    id: number,
+    id: string,
     data: { email?: string; name?: string },
   ): Promise<User> {
     return this.prisma.user.update({
@@ -38,7 +38,7 @@ export class UsersService {
     });
   }
 
-  async remove(id: number): Promise<User> {
+  async remove(id: string): Promise<User> {
     return this.prisma.user.delete({
       where: { id },
     });
