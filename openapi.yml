@@ -1,0 +1,59 @@
+openapi: 3.0.3
+info:
+  title: PetSitter API
+  version: "0.1"
+paths: {}
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        password:
+          type: string
+        full_name:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+    Job:
+      type: object
+      properties:
+        id:
+          type: integer
+        creator_user_id:
+          type: integer
+        start_time:
+          type: string
+        end_time:
+          type: string
+        activity:
+          type: string
+        dog:
+          $ref: '#/components/schemas/Dog'
+    Dog:
+      type: object
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
+        breed:
+          type: string
+        size:
+          type: string
+    JobApplication:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        user_id:
+          type: integer
+        job_id:
+          type: integer
