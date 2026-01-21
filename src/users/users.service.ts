@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { User, Prisma } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user-dto';
@@ -21,9 +21,12 @@ export class UsersService {
   
 
   async create(dto: CreateUserDto): Promise<User> {
-    return this.prisma.user.create({
-      data: this.toCreateInput(dto),
-    });
+    const existsUser = await this.prisma.user.findUnique({
+      where: { email: dto.email }
+    })
+    if (existsUser) {
+      throw new ConflictException('이미 존재하는 이메일입니다.');
+    }
+    return this.prisma.user.create({ data: this.toCreateInput(dto) });
   }
-  
 }
