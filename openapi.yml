@@ -62,7 +62,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/PutUserRequest'
     delete:
       tags:
       - Users
@@ -312,6 +312,19 @@ components:
         - password
         - full_name
         - roles
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        full_name:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+    PutUserRequest:
+      type: object
       properties:
         email:
           type: string
