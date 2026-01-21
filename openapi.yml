@@ -88,7 +88,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Job'
+              $ref: '#/components/schemas/PostJobRequest'
     get:
       tags:
       - Jobs
@@ -141,7 +141,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Job'
+              $ref: '#/components/schemas/UpdateJobRequest'
     delete:
       tags:
       - Jobs
@@ -347,6 +347,42 @@ components:
           type: string
         end_time:
           type: string
+        activity:
+          type: string
+        dog:
+          $ref: '#/components/schemas/Dog'
+    PostJobRequest:
+      type: object
+      required:
+        - start_time
+        - end_time
+        - activity
+        - dog
+      properties:
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        activity:
+          type: string
+        dog:
+          $ref: '#/components/schemas/Dog'
+    UpdateJobRequest:
+      type: object
+      required:
+        - start_time
+        - end_time
+        - activity
+        - dog
+      properties:
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
         activity:
           type: string
         dog:
