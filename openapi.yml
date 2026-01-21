@@ -225,7 +225,7 @@ paths:
       in: path
       required: true
       schema:
-        type: integer
+        type: string
     get:
       tags:
       - Users

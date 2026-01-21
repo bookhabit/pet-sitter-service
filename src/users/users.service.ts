@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { User, Prisma } from '@prisma/client';
+import { User, Prisma, Job, JobApplication } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user-dto';
 import { UpdateUserDto } from './dto/update-user-dto';
 import { v4 as uuid } from 'uuid';
@@ -69,5 +69,17 @@ export class UsersService {
     await this.prisma.user.delete({
       where: { id },
     });
+  }
+
+  async findJobsByUserId(id: string): Promise<Job[]> {
+    return this.prisma.job.findMany({
+      where: {creator_user_id: id},
+    })
+  }
+
+  async findJobApplicationsByUserId(id: string): Promise<JobApplication[]> {
+    return this.prisma.jobApplication.findMany({
+      where: {user_id: id},
+    })
   }
 }

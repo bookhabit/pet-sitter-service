@@ -38,4 +38,14 @@ export class UsersController {
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
+
+  @Get(':id/jobs')
+  findJobs(@Param('id') id: string) {
+    return this.usersService.findJobsByUserId(id);
+  }
+
+  @Get(':id/job-applications')
+  findJobApplications(@Param('id') id: string) {
+    return this.usersService.findJobApplicationsByUserId(id);
+  }
 }
