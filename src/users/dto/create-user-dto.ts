@@ -2,12 +2,10 @@ import { Role } from '@prisma/client';
 import {
     IsString,
     IsEmail,
-    IsInt,
-    Min,
-    MaxLength,
-    IsOptional,
     IsArray,
-    IsEnum
+    IsEnum,
+    MaxLength,
+    MinLength
   } from 'class-validator';
   
   export class CreateUserDto {
@@ -19,6 +17,7 @@ import {
     full_name: string;
   
     @IsString()
+    @MinLength(8)
     @MaxLength(20)
     password: string;
 
