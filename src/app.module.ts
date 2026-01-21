@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { RolesGuard } from './auth/guards/roles.guard';
 import { JobsModule } from './jobs/jobs.module';
 import { JobApplicationModule } from './job-application/job-application.module';
 
@@ -17,6 +18,10 @@ import { JobApplicationModule } from './job-application/job-application.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

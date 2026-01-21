@@ -3,14 +3,16 @@ import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job-dto';
 import { UpdateJobDto } from './dto/update-job-dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import type { User } from '@prisma/client';
 
 @Controller('jobs')
 export class JobsController {
     constructor(private readonly jobsService: JobsService) {}
 
-    // 구인공고 등록
+    // 구인공고 등록 (OWNER만 가능)
     @Post()
+    @Roles('OWNER')
     create(@Body() createJobDto: CreateJobDto, @CurrentUser() user: User) {
         return this.jobsService.create(createJobDto, user.id);
     }
