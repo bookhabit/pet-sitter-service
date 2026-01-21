@@ -7,9 +7,10 @@ import { UsersModule } from './users/users.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { JobsModule } from './jobs/jobs.module';
+import { JobApplicationModule } from './job-application/job-application.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule, SessionsModule, JobsModule],
+  imports: [PrismaModule, UsersModule, SessionsModule, JobsModule, JobApplicationModule],
   controllers: [AppController],
   providers: [
     AppService,

@@ -186,11 +186,15 @@ paths:
             Location:
               schema:
                 type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobApplication'
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobApplication'
+              type: object
   /users/{id}/jobs:
     parameters:
       - schema:
@@ -256,7 +260,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobApplication'
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - PENDING
+                    - COMPLETE
+                    - CANCELLED
       responses:
         '200':
           description: OK
