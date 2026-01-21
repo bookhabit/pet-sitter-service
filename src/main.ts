@@ -30,6 +30,15 @@ async function bootstrap() {
       .setTitle('PetSitter API')
       .setDescription('PetSitter API 문서')
       .setVersion('0.1')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'JWT Authorization header using the Bearer scheme',
+        },
+        'SessionToken', // 🔑 security name
+      )
       .build();
     swaggerDocument = SwaggerModule.createDocument(app, config);
   }
@@ -52,6 +61,20 @@ async function bootstrap() {
       ...swaggerDocument.paths,
     };
   }
+
+  // components 전체 병합
+if (swaggerDocument.components) {
+  codeDocument.components = {
+    ...codeDocument.components,
+    ...swaggerDocument.components,
+  };
+}
+
+// security (root) 병합
+if (swaggerDocument.security) {
+  codeDocument.security = swaggerDocument.security;
+}
+
 
   SwaggerModule.setup('api', app, codeDocument);
 

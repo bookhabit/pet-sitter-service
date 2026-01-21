@@ -29,4 +29,10 @@ export class UsersService {
     }
     return this.prisma.user.create({ data: this.toCreateInput(dto) });
   }
+
+  async findOne(id: string): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: { id },
+    });
+  }
 }
