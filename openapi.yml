@@ -62,7 +62,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PutUserRequest'
+              $ref: '#/components/schemas/UpdateUserRequest'
     delete:
       tags:
       - Users
@@ -78,22 +78,107 @@ paths:
       summary: Create Job
       operationId: createJob
       responses:
-        '201':
+        '201': 
           description: Created
           headers:
             Location:
               schema:
                 type: string
+        '400': 
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError' 
+        '401': 
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError' 
+        '403': 
+          description: Forbidden
+          content:
+            application/problem+json: 
+              schema:
+                $ref: '#/components/schemas/Problem'
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PostJobRequest'
+              $ref: '#/components/schemas/CreateJobRequest'
     get:
       tags:
       - Jobs
-      summary: List All Jobs
-      operationId: listAllJobs
+      summary: List/Search Available Jobs
+      operationId: listOrSearchAvailableJobs
+      parameters:
+      - name: start_time_before
+        in: query
+        description: Search jobs starting before this date and time.
+        schema:
+          type: string
+          format: date-time
+      - name: start_time_after
+        in: query
+        description: Search jobs starting after this date and time.
+        schema:
+          type: string
+          format: date-time
+      - name: end_time_before
+        in: query
+        description: Search jobs ending before this date and time.
+        schema:
+          type: string
+          format: date-time
+      - name: end_time_after
+        in: query
+        description: Search jobs ending after this date and time.
+        schema:
+          type: string
+          format: date-time
+      - name: activity
+        in: query
+        description: Performs a full-text search for the phrase entered in job activities.
+        schema:
+          type: string
+      - name: pets
+        in: query
+        description: Searches for pets matching specific criteria.
+        style: deepObject
+        schema:
+          type: object
+          properties:
+            age_below:
+              type: integer
+              description: Return only pets with this age or younger.
+            age_above:
+              type: integer
+              description: Return only pets with this age or older.
+            species:
+              type: string
+              description: Return only pets with this species. Provide multiple species as comma-separated values.
+      - name: limit
+        in: query
+        description: The maximum number of results to return.
+        schema:
+          type: integer
+          default: 20
+          maximum: 100
+      - name: cursor
+        in: query
+        description: Use the cursor from the response to access more results.
+        schema:
+          type: string
+      - name: sort
+        in: query
+        description: |
+          Indicate the sorting key and direction for the results.
+          Use the field name, suffixed with ":asc" for ascending
+          or ":desc" for descending order.
+          Valid fields: start_time, end_time
+        schema:
+          type: string
       responses:
         '200':
           description: OK
@@ -106,6 +191,10 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Job'
+                  cursor:
+                    type: string
+                    description: Cursor for the next result page.
+                    nullable: true
   /jobs/{id}:
     parameters:
       - schema:
@@ -186,15 +275,12 @@ paths:
             Location:
               schema:
                 type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobApplication'
       requestBody:
         content:
           application/json:
             schema:
               type: object
+              description: Empty body - job_id comes from path, user_id from authentication
   /users/{id}/jobs:
     parameters:
       - schema:
@@ -225,7 +311,7 @@ paths:
       in: path
       required: true
       schema:
-        type: string
+        type: integer
     get:
       tags:
       - Users
@@ -260,23 +346,16 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - status
-              properties:
-                status:
-                  type: string
-                  enum:
-                    - PENDING
-                    - COMPLETE
-                    - CANCELLED
+              $ref: '#/components/schemas/JobApplication'
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobApplication'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobApplication'
   /sessions:
     post:
       tags:
@@ -307,17 +386,34 @@ components:
       type: object
       properties:
         id:
-          type: string
+          type: integer
+          readOnly: true 
         email:
           type: string
+          format: email 
         password:
           type: string
+          format: password 
+          writeOnly: true 
+          minLength: 8 
         full_name:
           type: string
+          minLength: 2 
+          maxLength: 50
         roles:
-          type: array
+          type: array 
+          minItems: 1 
+          uniqueItems: true 
           items:
-            type: string
+            type: string 
+            enum: 
+              - PetOwner
+              - PetSitter
+              - Admin
+      required: 
+        - email
+        - full_name
+        - roles
     CreateUserRequest:
       type: object
       required:
@@ -328,49 +424,87 @@ components:
       properties:
         email:
           type: string
+          format: email
         password:
           type: string
+          format: password
+          minLength: 8
         full_name:
           type: string
+          minLength: 2
+          maxLength: 50
         roles:
           type: array
+          minItems: 1
+          uniqueItems: true
           items:
             type: string
-    PutUserRequest:
+            enum:
+              - PetOwner
+              - PetSitter
+              - Admin
+    UpdateUserRequest:
       type: object
       properties:
         email:
           type: string
+          format: email
         password:
           type: string
+          format: password
+          minLength: 8
         full_name:
           type: string
+          minLength: 2
+          maxLength: 50
         roles:
           type: array
+          minItems: 1
+          uniqueItems: true
           items:
             type: string
+            enum:
+              - PetOwner
+              - PetSitter
+              - Admin
     Job:
       type: object
       properties:
         id:
-          type: string
+          type: integer
+          readOnly: true 
         creator_user_id:
-          type: string
+          type: integer
+          readOnly: true 
         start_time:
           type: string
+          format: date-time 
         end_time:
           type: string
+          format: date-time 
         activity:
           type: string
-        dog:
-          $ref: '#/components/schemas/Dog'
-    PostJobRequest:
+          minLength: 5 
+          maxLength: 500
+        pets:
+          type: array
+          minItems: 1 
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/Pet'
+      required:
+      - id
+      - creator_user_id
+      - start_time
+      - end_time
+      - pets
+    CreateJobRequest:
       type: object
       required:
         - start_time
         - end_time
         - activity
-        - dog
+        - pets
       properties:
         start_time:
           type: string
@@ -380,15 +514,16 @@ components:
           format: date-time
         activity:
           type: string
-        dog:
-          $ref: '#/components/schemas/Dog'
+          minLength: 5
+          maxLength: 500
+        pets:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/CreatePetRequest'
     UpdateJobRequest:
       type: object
-      required:
-        - start_time
-        - end_time
-        - activity
-        - dog
       properties:
         start_time:
           type: string
@@ -398,30 +533,114 @@ components:
           format: date-time
         activity:
           type: string
-        dog:
-          $ref: '#/components/schemas/Dog'
+          minLength: 5
+          maxLength: 500
+        pets:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/CreatePetRequest'
     Dog:
       type: object
       properties:
-        name:
+        species:
           type: string
-        age:
-          type: integer
         breed:
           type: string
         size:
           type: string
+      required:
+        - species
+    Cat:
+      type: object
+      properties:
+        species:
+          type: string
+        breed:
+          type: string
+      required:
+        - species
+    Pet:
+      allOf:
+        - type: object
+          properties:
+            name:
+              type: string
+              minLength: 2
+              maxLength: 20
+            age:
+              type: integer
+              minimum: 1
+              maximum: 100
+        - oneOf:
+            - $ref: '#/components/schemas/Cat'
+            - $ref: '#/components/schemas/Dog'
+          discriminator:
+            propertyName: species
+            mapping:
+              Cat: '#/components/schemas/Cat'
+              Dog: '#/components/schemas/Dog'
+    CreatePetRequest:
+      type: object
+      required:
+        - name
+        - age
+        - species
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 20
+        age:
+          type: integer
+          minimum: 1
+          maximum: 100
+        species:
+          type: string
+          enum: [Cat, Dog]
+          description: Type of animal
+        breed:
+          type: string
+          description: Breed or species name
+        size:
+          type: string
+          description: Size of the pet (required for Dog)
     JobApplication:
       type: object
       properties:
         id:
           type: string
+          readOnly: true 
         status:
           type: string
+          default: applying 
+          enum: 
+            - applying
+            - approved
+            - rejected
         user_id:
           type: string
+          readOnly: true 
         job_id:
           type: string
+          readOnly: true
+      required:
+      - id
+      - status
+      - user_id
+      - job_id
+    UpdateJobApplicationRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - applying
+            - approved
+            - rejected
     Session:
       type: object
       properties:
@@ -429,6 +648,44 @@ components:
           type: string
         auth_header:
           type: string
+    OASError: 
+      type: object
+      properties:
+        message:
+          type: string
+          description: Human-readable error message
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              path:
+                type: string
+                description: For input validation errors, identifies where in the JSON request body the error occured
+              message:
+                type: string
+                description: Human-readable error message
+              errorCode:
+                type: string
+                description: Code indicating error type
+    Problem: 
+      type: object
+      properties:
+        type:
+          type: string
+          description: URI indicating error type
+        title:
+          type: string
+          description: Human-readable error title
+        status:
+          type: integer
+          description: HTTP status code
+        detail:
+          type: string
+          description: Human-readable error details
+        instance:
+          type: string
+          description: URI indicating error instance
   securitySchemes:
     SessionToken:
       type: apiKey
