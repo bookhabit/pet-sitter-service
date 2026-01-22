@@ -541,46 +541,41 @@ components:
           maxItems: 10
           items:
             $ref: '#/components/schemas/CreatePetRequest'
-    Dog:
+    Pet:
       type: object
       properties:
+        id:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          minLength: 2
+          maxLength: 20
+        age:
+          type: integer
+          minimum: 1
+          maximum: 100
         species:
           type: string
+          enum: [Cat, Dog]
+          description: Type of animal
         breed:
           type: string
+          description: Breed or species name
         size:
           type: string
-      required:
-        - species
-    Cat:
-      type: object
-      properties:
-        species:
+          description: Size of the pet (optional, typically used for Dog)
+          nullable: true
+        job_id:
           type: string
-        breed:
-          type: string
+          readOnly: true
+          description: ID of the job this pet belongs to
       required:
+        - id
+        - name
+        - age
         - species
-    Pet:
-      allOf:
-        - type: object
-          properties:
-            name:
-              type: string
-              minLength: 2
-              maxLength: 20
-            age:
-              type: integer
-              minimum: 1
-              maximum: 100
-        - oneOf:
-            - $ref: '#/components/schemas/Cat'
-            - $ref: '#/components/schemas/Dog'
-          discriminator:
-            propertyName: species
-            mapping:
-              Cat: '#/components/schemas/Cat'
-              Dog: '#/components/schemas/Dog'
+        - breed
     CreatePetRequest:
       type: object
       required:

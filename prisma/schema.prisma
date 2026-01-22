@@ -27,9 +27,9 @@ model User {
 }
 
 enum Role {
-  OWNER
-  SITTER
-  ADMIN
+  PetOwner
+  PetSitter
+  Admin
 }
 
 model Job {
@@ -42,9 +42,8 @@ model Job {
   // 관계: Job belongs to User (N:1)
   creator User @relation("JobCreator", fields: [creator_user_id], references: [id])
   
-  // 관계: Job contains Dog (1:1)
-  dog_id String @unique
-  dog Dog @relation(fields: [dog_id], references: [id])
+  // 관계: Job contains Pets (1:N)
+  pets Pet[]
   
   // 관계: Job has JobApplications (1:N)
   jobApplications JobApplication[]
@@ -53,18 +52,25 @@ model Job {
   updatedAt DateTime @updatedAt
 }
 
-model Dog {
+model Pet {
   id String @id @default(uuid())
   name String
   age Int
+  species PetSpecies
   breed String
-  size String
+  size String?
   
-  // 관계: Dog belongs to Job (1:1)
-  job Job?
+  // 관계: Pet belongs to Job (N:1)
+  job_id String
+  job Job @relation(fields: [job_id], references: [id])
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum PetSpecies {
+  Cat
+  Dog
 }
 
 model JobApplication {
@@ -85,9 +91,9 @@ model JobApplication {
 
 
 enum ApproveStatus {
-  COMPLETE
-  PENDING
-  CANCELLED
+  applying
+  approved
+  rejected
 }
 
 model Session {
