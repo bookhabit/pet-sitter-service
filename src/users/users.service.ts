@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { User, Prisma, Job, JobApplication } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user-dto';
 import { UpdateUserDto } from './dto/update-user-dto';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class UsersService {
@@ -12,7 +12,7 @@ export class UsersService {
 
   private toCreateInput(dto: CreateUserDto): Prisma.UserCreateInput {
     return {
-      id: uuid(),
+      id: randomUUID(),
       email: dto.email,
       full_name: dto.full_name,
       password: dto.password,

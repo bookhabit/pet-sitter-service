@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import * as jwt from 'jsonwebtoken';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class SessionsService {
@@ -37,7 +37,7 @@ export class SessionsService {
         // 세션 저장
         await this.prisma.session.create({
             data: {
-                id: uuid(),
+                id: randomUUID(),
                 user_id: user.id,
                 auth_header: authHeader,
             },

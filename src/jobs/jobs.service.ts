@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateJobDto } from './dto/create-job-dto';
 import { UpdateJobDto } from './dto/update-job-dto';
 import { Job, Prisma } from '@prisma/client';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class JobsService {
@@ -13,7 +13,7 @@ export class JobsService {
         // Dog를 먼저 생성
         const dog = await this.prisma.dog.create({
             data: {
-                id: uuid(),
+                id: randomUUID(),
                 name: createJobDto.dog.name,
                 age: createJobDto.dog.age,
                 breed: createJobDto.dog.breed,
@@ -24,7 +24,7 @@ export class JobsService {
         // Job 생성 시 dog_id 연결
         return this.prisma.job.create({
             data: {
-                id: uuid(),
+                id: randomUUID(),
                 creator_user_id: creatorUserId,
                 start_time: new Date(createJobDto.start_time),
                 end_time: new Date(createJobDto.end_time),

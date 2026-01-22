@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateJobApplicationDto } from './dto/update-job-application.dto';
 import { JobApplication } from '@prisma/client';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class JobApplicationService {
@@ -43,7 +43,7 @@ export class JobApplicationService {
 
         return this.prisma.jobApplication.create({
             data: {
-                id: uuid(),
+                id: randomUUID(),
                 status: 'PENDING',
                 user_id: applicantUserId,
                 job_id: jobId,
