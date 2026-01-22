@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateJobDto } from './dto/create-job-dto';
 import { UpdateJobDto } from './dto/update-job-dto';
 import { Job, Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { SearchJobsQueryDto } from './dto/search-job-query.dto';
 
 @Injectable()
 export class JobsService {
@@ -38,13 +39,179 @@ export class JobsService {
         return job;
     }
 
-    async findAll(): Promise<Job[]> {
-        return this.prisma.job.findMany({
+    async findAll(query: SearchJobsQueryDto): Promise<{ items: Job[]; cursor: string | null }> {
+        console.log('🔍 [JobsService.findAll] 요청된 쿼리 파라미터:', JSON.stringify(query, null, 2));
+        
+        // Where 조건 구성
+        const where: Prisma.JobWhereInput = {};
+
+        // 날짜 필터링
+        if (query.start_time_before || query.start_time_after) {
+            where.start_time = {};
+            if (query.start_time_before) {
+                where.start_time.lte = new Date(query.start_time_before);
+                console.log('📅 [필터] start_time <=', query.start_time_before);
+            }
+            if (query.start_time_after) {
+                where.start_time.gte = new Date(query.start_time_after);
+                console.log('📅 [필터] start_time >=', query.start_time_after);
+            }
+        }
+
+        if (query.end_time_before || query.end_time_after) {
+            where.end_time = {};
+            if (query.end_time_before) {
+                where.end_time.lte = new Date(query.end_time_before);
+                console.log('📅 [필터] end_time <=', query.end_time_before);
+            }
+            if (query.end_time_after) {
+                where.end_time.gte = new Date(query.end_time_after);
+                console.log('📅 [필터] end_time >=', query.end_time_after);
+            }
+        }
+
+        // activity full-text search
+        if (query.activity) {
+            where.activity = {
+                contains: query.activity,
+                mode: 'insensitive', // 대소문자 구분 없이 검색
+            };
+            console.log('🔎 [필터] activity contains:', query.activity);
+        }
+
+        // pets 필터링 (쿼리 파라미터의 bracket notation 처리)
+        const petsAgeBelow = (query as any)['pets[age_below]'];
+        const petsAgeAbove = (query as any)['pets[age_above]'];
+        const petsSpecies = (query as any)['pets[species]'];
+
+        if (petsAgeBelow !== undefined || petsAgeAbove !== undefined || petsSpecies) {
+            const petsWhere: Prisma.PetWhereInput = {};
+
+            // age 필터링 (age_below와 age_above 모두 지원)
+            if (petsAgeBelow !== undefined || petsAgeAbove !== undefined) {
+                petsWhere.age = {};
+                if (petsAgeBelow !== undefined) {
+                    petsWhere.age.lte = petsAgeBelow;
+                    console.log('🐾 [필터] pet age <=', petsAgeBelow);
+                }
+                if (petsAgeAbove !== undefined) {
+                    petsWhere.age.gte = petsAgeAbove;
+                    console.log('🐾 [필터] pet age >=', petsAgeAbove);
+                }
+            }
+
+            if (petsSpecies) {
+                // 쉼표로 구분된 여러 species 지원
+                // 한 번의 순회로 split, normalize, validate 동시 처리 (O(n))
+                const speciesList: string[] = [];
+                const invalidSpecies: string[] = [];
+                
+                const parts = petsSpecies.split(',');
+                for (let i = 0; i < parts.length; i++) {
+                    const trimmed = parts[i].trim();
+                    if (!trimmed) continue; // 빈 문자열 스킵
+                    
+                    // 대소문자 구분 없이 처리하고 첫 글자만 대문자로 변환
+                    const normalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+                    
+                    // 유효한 enum 값만 추가 (Cat 또는 Dog)
+                    if (normalized === 'Cat' || normalized === 'Dog') {
+                        speciesList.push(normalized);
+                    } else {
+                        invalidSpecies.push(trimmed);
+                    }
+                }
+
+                if (speciesList.length === 0) {
+                    const errorMsg = invalidSpecies.length > 0
+                        ? `Invalid species value(s): ${invalidSpecies.join(', ')}. Expected "Cat" or "Dog" (case-insensitive).`
+                        : `Invalid species value. Expected "Cat" or "Dog" (case-insensitive), but received: ${petsSpecies}`;
+                    throw new BadRequestException(errorMsg);
+                }
+
+                petsWhere.species = {
+                    in: speciesList as any, // PetSpecies enum 타입
+                };
+                console.log('🐾 [필터] pet species in:', speciesList);
+            }
+
+            // pets 필터가 있으면 해당 조건을 만족하는 pet을 가진 job만 조회
+            if (Object.keys(petsWhere).length > 0) {
+                where.pets = {
+                    some: petsWhere,
+                };
+            }
+        }
+
+        // Sort 처리
+        const orderBy: Prisma.JobOrderByWithRelationInput[] = [];
+        if (query.sort) {
+            const [field, direction] = query.sort.split(':');
+            if (field === 'start_time' || field === 'end_time') {
+                const sortDirection = direction === 'desc' ? 'desc' : 'asc';
+                orderBy.push({
+                    [field]: sortDirection,
+                });
+                console.log('📊 [정렬]', field, sortDirection);
+            }
+        }
+        // 기본 정렬: start_time asc
+        if (orderBy.length === 0) {
+            orderBy.push({ start_time: 'asc' });
+            console.log('📊 [정렬] 기본값: start_time asc');
+        }
+
+        // Limit 처리 (기본값 20, 최대 100)
+        const limit = Math.min(query.limit || 20, 100);
+        const take = limit + 1; // cursor 확인을 위해 1개 더 가져옴
+        console.log('📄 [페이징] limit:', limit, 'take:', take);
+
+        // Cursor 기반 pagination
+        const cursor = query.cursor
+            ? {
+                  id: query.cursor,
+              }
+            : undefined;
+        if (cursor) {
+            console.log('📄 [페이징] cursor:', query.cursor);
+        } else {
+            console.log('📄 [페이징] 첫 페이지');
+        }
+
+        console.log('🔧 [Prisma Query] where 조건:', JSON.stringify(where, null, 2));
+        console.log('🔧 [Prisma Query] orderBy:', JSON.stringify(orderBy, null, 2));
+
+        // 쿼리 실행
+        const startTime = Date.now();
+        const jobs = await this.prisma.job.findMany({
+            where,
             include: {
                 pets: true,
                 // creator: true,
             },
+            orderBy,
+            take,
+            cursor,
         });
+        const queryTime = Date.now() - startTime;
+
+        console.log('⏱️ [쿼리 실행 시간]', queryTime, 'ms');
+        console.log('📦 [조회 결과] 총', jobs.length, '개 조회됨');
+
+        // 다음 페이지가 있는지 확인
+        const hasNextPage = jobs.length > limit;
+        const items = hasNextPage ? jobs.slice(0, limit) : jobs;
+        const nextCursor = hasNextPage ? items[items.length - 1].id : null;
+
+        console.log('✅ [최종 결과]');
+        console.log('  - 반환할 items:', items.length, '개');
+        console.log('  - 다음 페이지 존재:', hasNextPage);
+        console.log('  - nextCursor:', nextCursor || 'null');
+
+        return {
+            items,
+            cursor: nextCursor,
+        };
     }
 
     async findOne(id: string): Promise<Job | null> {

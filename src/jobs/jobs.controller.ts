@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job-dto';
 import { UpdateJobDto } from './dto/update-job-dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import type { User } from '@prisma/client';
+import { SearchJobsQueryDto } from './dto/search-job-query.dto';
 
 @Controller('jobs')
 export class JobsController {
@@ -19,8 +20,8 @@ export class JobsController {
 
     // 구인공고 목록 조회
     @Get()
-    findAll() {
-        return this.jobsService.findAll();
+    findAll(@Query() query: SearchJobsQueryDto) {
+        return this.jobsService.findAll(query);
     }
 
     // 구인공고 상세 조회

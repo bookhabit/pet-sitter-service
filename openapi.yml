@@ -142,22 +142,23 @@ paths:
         description: Performs a full-text search for the phrase entered in job activities.
         schema:
           type: string
-      - name: pets
+      - name: pets[age_below]
         in: query
-        description: Searches for pets matching specific criteria.
-        style: deepObject
+        description: Return only pets with this age or younger.
         schema:
-          type: object
-          properties:
-            age_below:
-              type: integer
-              description: Return only pets with this age or younger.
-            age_above:
-              type: integer
-              description: Return only pets with this age or older.
-            species:
-              type: string
-              description: Return only pets with this species. Provide multiple species as comma-separated values.
+          type: integer
+          minimum: 1
+      - name: pets[age_above]
+        in: query
+        description: Return only pets with this age or older.
+        schema:
+          type: integer
+          minimum: 1
+      - name: pets[species]
+        in: query
+        description: Return only pets with this species. Provide multiple species as comma-separated values (e.g., "Cat,Dog").
+        schema:
+          type: string
       - name: limit
         in: query
         description: The maximum number of results to return.

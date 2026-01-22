@@ -15,6 +15,9 @@ async function bootstrap() {
       whitelist: true, // DTO에 없는 속성 제거
       forbidNonWhitelisted: true, // DTO에 없는 속성이 있으면 에러
       transform: true, // 자동 타입 변환
+      transformOptions: {
+        enableImplicitConversion: true, // 암시적 타입 변환 활성화
+      },
     }),
   );
 
@@ -43,40 +46,54 @@ async function bootstrap() {
     swaggerDocument = SwaggerModule.createDocument(app, config);
   }
 
-  // 코드에서 생성된 Swagger 문서와 병합
+  // openapi.yml을 기본으로 사용하고, 코드에서 생성된 스키마만 보완
   const codeDocument = SwaggerModule.createDocument(app, new DocumentBuilder().build());
   
-  // 병합: openapi.yml 우선, 코드에서 생성된 내용은 보완
-  if (swaggerDocument.components?.schemas) {
-    codeDocument.components = codeDocument.components || {};
-    codeDocument.components.schemas = {
-      ...codeDocument.components.schemas,
-      ...swaggerDocument.components.schemas,
-    };
-  }
-  
+  // openapi.yml의 paths를 완전히 우선 사용
+  // openapi.yml에 정의된 경로는 그대로 사용하고, 없는 경로만 codeDocument에서 추가
   if (swaggerDocument.paths) {
-    codeDocument.paths = {
-      ...codeDocument.paths,
-      ...swaggerDocument.paths,
-    };
+    // openapi.yml의 paths를 기본으로 사용
+    const mergedPaths = { ...swaggerDocument.paths };
+    // codeDocument의 paths 중 openapi.yml에 없는 경로만 추가
+    if (codeDocument.paths) {
+      Object.keys(codeDocument.paths).forEach(path => {
+        if (!mergedPaths[path]) {
+          mergedPaths[path] = codeDocument.paths[path];
+        }
+      });
+    }
+    swaggerDocument.paths = mergedPaths;
+  } else {
+    swaggerDocument.paths = codeDocument.paths;
   }
 
-  // components 전체 병합
-if (swaggerDocument.components) {
-  codeDocument.components = {
-    ...codeDocument.components,
-    ...swaggerDocument.components,
-  };
-}
+  // components 병합: openapi.yml 우선, 코드에서 생성된 스키마는 보완
+  if (swaggerDocument.components) {
+    swaggerDocument.components = {
+      ...swaggerDocument.components,
+      ...codeDocument.components,
+      schemas: {
+        ...swaggerDocument.components.schemas,
+        ...codeDocument.components?.schemas,
+      },
+    };
+  } else {
+    swaggerDocument.components = codeDocument.components;
+  }
 
-// security (root) 병합
-if (swaggerDocument.security) {
-  codeDocument.security = swaggerDocument.security;
-}
+  // security (root) 병합
+  if (swaggerDocument.security) {
+    swaggerDocument.security = swaggerDocument.security;
+  } else if (codeDocument.security) {
+    swaggerDocument.security = codeDocument.security;
+  }
 
+  // info 병합 (openapi.yml 우선)
+  if (!swaggerDocument.info && codeDocument.info) {
+    swaggerDocument.info = codeDocument.info;
+  }
 
-  SwaggerModule.setup('api', app, codeDocument);
+  SwaggerModule.setup('api', app, swaggerDocument);
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
