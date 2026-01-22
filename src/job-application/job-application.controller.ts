@@ -10,7 +10,7 @@ export class JobApplicationByJobController {
     constructor(private readonly jobApplicationService: JobApplicationService) {}
 
     @Post()
-    @Roles('SITTER')
+    @Roles('PetSitter')
     create(
         @Param('jobId') jobId: string,
         @CurrentUser() currentUser: User,

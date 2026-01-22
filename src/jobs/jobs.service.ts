@@ -10,38 +10,38 @@ export class JobsService {
     constructor(private readonly prisma: PrismaService) {}
 
     async create(createJobDto: CreateJobDto, creatorUserId: string): Promise<Job> {
-        // Dog를 먼저 생성
-        const dog = await this.prisma.dog.create({
-            data: {
-                id: randomUUID(),
-                name: createJobDto.dog.name,
-                age: createJobDto.dog.age,
-                breed: createJobDto.dog.breed,
-                size: createJobDto.dog.size,
-            },
-        });
-
-        // Job 생성 시 dog_id 연결
-        return this.prisma.job.create({
+        // Job 생성
+        const job = await this.prisma.job.create({
             data: {
                 id: randomUUID(),
                 creator_user_id: creatorUserId,
                 start_time: new Date(createJobDto.start_time),
                 end_time: new Date(createJobDto.end_time),
                 activity: createJobDto.activity,
-                dog_id: dog.id,
+                pets: {
+                    create: createJobDto.pets.map(pet => ({
+                        id: randomUUID(),
+                        name: pet.name,
+                        age: pet.age,
+                        species: pet.species,
+                        breed: pet.breed,
+                        size: pet.size,
+                    })),
+                },
             },
             include: {
-                dog: true,
+                pets: true,
                 // creator: true,
             },
         });
+
+        return job;
     }
 
     async findAll(): Promise<Job[]> {
         return this.prisma.job.findMany({
             include: {
-                dog: true,
+                pets: true,
                 // creator: true,
             },
         });
@@ -51,7 +51,7 @@ export class JobsService {
         const job = await this.prisma.job.findUnique({
             where: { id },
             include: {
-                dog: true,
+                pets: true,
                 creator: true,
             },
         });
@@ -83,14 +83,18 @@ export class JobsService {
         if (updateJobDto.activity) {
             updateData.activity = updateJobDto.activity;
         }
-        if (updateJobDto.dog) {
-            updateData.dog = {
-                update: {
-                    name: updateJobDto.dog.name,
-                    age: updateJobDto.dog.age,
-                    breed: updateJobDto.dog.breed,
-                    size: updateJobDto.dog.size,
-                },
+        if (updateJobDto.pets) {
+            // 기존 pets 삭제 후 새로 생성
+            updateData.pets = {
+                deleteMany: {},
+                create: updateJobDto.pets.map(pet => ({
+                    id: randomUUID(),
+                    name: pet.name,
+                    age: pet.age,
+                    species: pet.species,
+                    breed: pet.breed,
+                    size: pet.size,
+                })),
             };
         }
 
@@ -98,7 +102,7 @@ export class JobsService {
             where: { id },
             data: updateData,
             include: {
-                dog: true,
+                pets: true,
                 // creator: true,
             },
         });

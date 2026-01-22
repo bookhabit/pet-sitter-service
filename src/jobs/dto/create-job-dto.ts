@@ -1,23 +1,31 @@
-import { IsString, IsDateString, IsNotEmpty, IsInt, Min, Max, IsObject, ValidateNested } from 'class-validator';
+import { IsString, IsDateString, IsNotEmpty, IsInt, Min, Max, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsEnum, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class DogDto {
+export enum PetSpecies {
+    Cat = 'Cat',
+    Dog = 'Dog',
+}
+
+export class PetDto {
     @IsString()
     @IsNotEmpty()
     name: string;
 
     @IsInt()
-    @Min(0)
-    @Max(30)
+    @Min(1)
+    @Max(100)
     age: number;
+
+    @IsEnum(PetSpecies)
+    species: PetSpecies;
 
     @IsString()
     @IsNotEmpty()
     breed: string;
 
     @IsString()
-    @IsNotEmpty()
-    size: string;
+    @IsOptional()
+    size?: string;
 }
 
 export class CreateJobDto {
@@ -31,8 +39,10 @@ export class CreateJobDto {
     @IsNotEmpty()
     activity: string;
 
-    @IsObject()
-    @ValidateNested()
-    @Type(() => DogDto)
-    dog: DogDto;
+    @IsArray()
+    @ArrayMinSize(1)
+    @ArrayMaxSize(10)
+    @ValidateNested({ each: true })
+    @Type(() => PetDto)
+    pets: PetDto[];
 }

@@ -10,9 +10,9 @@ import type { User } from '@prisma/client';
 export class JobsController {
     constructor(private readonly jobsService: JobsService) {}
 
-    // 구인공고 등록 (OWNER만 가능)
+    // 구인공고 등록 (PetOwner만 가능)
     @Post()
-    @Roles('OWNER')
+    @Roles('PetOwner')
     create(@Body() createJobDto: CreateJobDto, @CurrentUser() user: User) {
         return this.jobsService.create(createJobDto, user.id);
     }

@@ -32,6 +32,7 @@ enum Role {
   Admin
 }
 
+
 model Job {
   id String @id @default(uuid())
   creator_user_id  String

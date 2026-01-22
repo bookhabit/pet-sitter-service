@@ -1,6 +1,6 @@
-import { IsString, IsDateString, IsOptional, IsObject, ValidateNested } from 'class-validator';
+import { IsString, IsDateString, IsOptional, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { DogDto } from './create-job-dto';
+import { PetDto } from './create-job-dto';
 
 export class UpdateJobDto {
   @IsOptional()
@@ -16,8 +16,10 @@ export class UpdateJobDto {
   activity?: string;
 
   @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => DogDto)
-  dog?: DogDto;
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(10)
+  @ValidateNested({ each: true })
+  @Type(() => PetDto)
+  pets?: PetDto[];
 }

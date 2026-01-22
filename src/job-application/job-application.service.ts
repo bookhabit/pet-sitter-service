@@ -44,7 +44,7 @@ export class JobApplicationService {
         return this.prisma.jobApplication.create({
             data: {
                 id: randomUUID(),
-                status: 'PENDING',
+                status: 'applying',
                 user_id: applicantUserId,
                 job_id: jobId,
             },
@@ -96,7 +96,7 @@ export class JobApplicationService {
                 user: true,
                 job: {
                     include: {
-                        dog: true,
+                        pets: true,
                     },
                 },
             },
