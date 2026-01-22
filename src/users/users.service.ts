@@ -31,10 +31,16 @@ export class UsersService {
     return this.prisma.user.create({ data: this.toCreateInput(dto) });
   }
 
-  async findOne(id: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
+  async findOne(id: string): Promise<User> {
+    const user = await this.prisma.user.findUnique({
       where: { id },
     });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
   }
 
   async update(id: string, dto: UpdateUserDto): Promise<User> {
@@ -44,6 +50,16 @@ export class UsersService {
 
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    // 이메일 변경 시 중복 체크
+    if (dto.email && dto.email !== user.email) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+      if (existingUser) {
+        throw new ConflictException('이미 존재하는 이메일입니다.');
+      }
     }
 
     return this.prisma.user.update({
@@ -71,15 +87,48 @@ export class UsersService {
     });
   }
 
-  async findJobsByUserId(id: string): Promise<Job[]> {
-    return this.prisma.job.findMany({
-      where: {creator_user_id: id},
-    })
+  async findJobsByUserId(id: string): Promise<{ items: Job[] }> {
+    // 사용자 존재 확인
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const jobs = await this.prisma.job.findMany({
+      where: { creator_user_id: id },
+      include: {
+        pets: true,
+      },
+    });
+
+    return { items: jobs };
   }
 
-  async findJobApplicationsByUserId(id: string): Promise<JobApplication[]> {
-    return this.prisma.jobApplication.findMany({
-      where: {user_id: id},
-    })
+  async findJobApplicationsByUserId(id: string): Promise<{ items: JobApplication[] }> {
+    // 사용자 존재 확인
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const jobApplications = await this.prisma.jobApplication.findMany({
+      where: { user_id: id },
+      include: {
+        user: true,
+        job: {
+          include: {
+            pets: true,
+          },
+        },
+      },
+    });
+
+    return { items: jobApplications };
   }
 }

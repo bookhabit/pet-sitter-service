@@ -3,7 +3,7 @@ import { JobApplicationService } from './job-application.service';
 import { UpdateJobApplicationDto } from './dto/update-job-application.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
-import type { User } from '@prisma/client';
+import type { User, JobApplication } from '@prisma/client';
 
 @Controller('jobs/:jobId/job-applications')
 export class JobApplicationByJobController {
@@ -20,7 +20,7 @@ export class JobApplicationByJobController {
     }
 
     @Get()
-    findAllByJob(@Param('jobId') jobId: string) {
+    findAllByJob(@Param('jobId') jobId: string): Promise<{ items: JobApplication[] }> {
         return this.jobApplicationService.findAllByJobId(jobId);
     }
 }
@@ -33,7 +33,8 @@ export class JobApplicationController {
     update(
         @Param('jobApplicationId') jobApplicationId: string,
         @Body() updateJobApplicationDto: UpdateJobApplicationDto,
+        @CurrentUser() currentUser: User,
     ) {
-        return this.jobApplicationService.update(jobApplicationId, updateJobApplicationDto);
+        return this.jobApplicationService.update(jobApplicationId, updateJobApplicationDto, currentUser.id);
     }
 }

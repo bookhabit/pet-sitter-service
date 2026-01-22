@@ -32,13 +32,13 @@ export class JobsController {
 
     // 구인공고 수정
     @Put(':id')
-    update(@Param('id') id: string, @Body() updateJobDto: UpdateJobDto) {
-        return this.jobsService.update(id, updateJobDto);
+    update(@Param('id') id: string, @Body() updateJobDto: UpdateJobDto, @CurrentUser() user: User) {
+        return this.jobsService.update(id, updateJobDto, user.id);
     }
 
     // 구인공고 삭제
     @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.jobsService.remove(id);
+    remove(@Param('id') id: string, @CurrentUser() user: User) {
+        return this.jobsService.remove(id, user.id);
     }
 }

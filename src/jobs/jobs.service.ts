@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateJobDto } from './dto/create-job-dto';
 import { UpdateJobDto } from './dto/update-job-dto';
@@ -11,13 +11,29 @@ export class JobsService {
     constructor(private readonly prisma: PrismaService) {}
 
     async create(createJobDto: CreateJobDto, creatorUserId: string): Promise<Job> {
+        // 날짜 유효성 검사
+        const startTime = new Date(createJobDto.start_time);
+        const endTime = new Date(createJobDto.end_time);
+
+        if (isNaN(startTime.getTime())) {
+            throw new BadRequestException('start_time must be a valid date-time');
+        }
+
+        if (isNaN(endTime.getTime())) {
+            throw new BadRequestException('end_time must be a valid date-time');
+        }
+
+        if (startTime >= endTime) {
+            throw new BadRequestException('start_time must be before end_time');
+        }
+
         // Job 생성
         const job = await this.prisma.job.create({
             data: {
                 id: randomUUID(),
                 creator_user_id: creatorUserId,
-                start_time: new Date(createJobDto.start_time),
-                end_time: new Date(createJobDto.end_time),
+                start_time: startTime,
+                end_time: endTime,
                 activity: createJobDto.activity,
                 pets: {
                     create: createJobDto.pets.map(pet => ({
@@ -230,7 +246,7 @@ export class JobsService {
         return job;
     }
 
-    async update(id: string, updateJobDto: UpdateJobDto): Promise<Job> {
+    async update(id: string, updateJobDto: UpdateJobDto, currentUserId: string): Promise<Job> {
         const job = await this.prisma.job.findUnique({
             where: { id },
         });
@@ -239,14 +255,50 @@ export class JobsService {
             throw new NotFoundException('Job not found');
         }
 
+        // 권한 체크: 본인만 수정 가능
+        if (job.creator_user_id !== currentUserId) {
+            throw new ForbiddenException('You can only update your own jobs');
+        }
+
         const updateData: Prisma.JobUpdateInput = {};
 
+        // 날짜 유효성 검사
+        let startTime: Date | undefined;
+        let endTime: Date | undefined;
+
         if (updateJobDto.start_time) {
-            updateData.start_time = new Date(updateJobDto.start_time);
+            startTime = new Date(updateJobDto.start_time);
+            if (isNaN(startTime.getTime())) {
+                throw new BadRequestException('start_time must be a valid date-time');
+            }
+            updateData.start_time = startTime;
         }
+
         if (updateJobDto.end_time) {
-            updateData.end_time = new Date(updateJobDto.end_time);
+            endTime = new Date(updateJobDto.end_time);
+            if (isNaN(endTime.getTime())) {
+                throw new BadRequestException('end_time must be a valid date-time');
+            }
+            updateData.end_time = endTime;
         }
+
+        // start_time과 end_time 모두 업데이트되는 경우 유효성 검사
+        if (startTime && endTime) {
+            if (startTime >= endTime) {
+                throw new BadRequestException('start_time must be before end_time');
+            }
+        } else if (startTime && job.end_time) {
+            // start_time만 업데이트되는 경우
+            if (startTime >= job.end_time) {
+                throw new BadRequestException('start_time must be before end_time');
+            }
+        } else if (endTime && job.start_time) {
+            // end_time만 업데이트되는 경우
+            if (job.start_time >= endTime) {
+                throw new BadRequestException('start_time must be before end_time');
+            }
+        }
+
         if (updateJobDto.activity) {
             updateData.activity = updateJobDto.activity;
         }
@@ -275,13 +327,18 @@ export class JobsService {
         });
     }
 
-    async remove(id: string): Promise<void> {
+    async remove(id: string, currentUserId: string): Promise<void> {
         const job = await this.prisma.job.findUnique({
             where: { id },
         });
 
         if (!job) {
             throw new NotFoundException('Job not found');
+        }
+
+        // 권한 체크: 본인만 삭제 가능
+        if (job.creator_user_id !== currentUserId) {
+            throw new ForbiddenException('You can only delete your own jobs');
         }
 
         await this.prisma.job.delete({

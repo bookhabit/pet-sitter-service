@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateJobApplicationDto } from './dto/update-job-application.dto';
 import { JobApplication } from '@prisma/client';
@@ -51,7 +51,7 @@ export class JobApplicationService {
         });
     }
 
-    async findAllByJobId(jobId: string): Promise<JobApplication[]> {
+    async findAllByJobId(jobId: string): Promise<{ items: JobApplication[] }> {
         const job = await this.prisma.job.findUnique({
             where: { id: jobId },
         });
@@ -60,37 +60,46 @@ export class JobApplicationService {
             throw new NotFoundException('Job not found');
         }
 
-        return this.prisma.jobApplication.findMany({
+        const jobApplications = await this.prisma.jobApplication.findMany({
             where: { job_id: jobId },
             include: {
                 user: true,
-                // job: {
-                //     include: {
-                //         dog: true,
-                //     },
-                // },
             },
         });
+
+        return { items: jobApplications };
     }
 
     async update(
         jobApplicationId: string,
         updateJobApplicationDto: UpdateJobApplicationDto,
+        currentUserId: string,
     ): Promise<JobApplication> {
         const jobApplication = await this.prisma.jobApplication.findUnique({
             where: { id: jobApplicationId },
+            include: {
+                job: true,
+            },
         });
 
         if (!jobApplication) {
             throw new NotFoundException('JobApplication not found');
         }
 
+        // 권한 체크: 구인공고 작성자만 상태 변경 가능
+        if (jobApplication.job.creator_user_id !== currentUserId) {
+            throw new ForbiddenException('Only the job creator can update application status');
+        }
+
+        // status가 제공되지 않았으면 에러
+        if (!updateJobApplicationDto.status) {
+            throw new BadRequestException('status is required');
+        }
+
         return this.prisma.jobApplication.update({
             where: { id: jobApplicationId },
             data: {
-                ...(updateJobApplicationDto.status && {
-                    status: updateJobApplicationDto.status,
-                }),
+                status: updateJobApplicationDto.status,
             },
             include: {
                 user: true,

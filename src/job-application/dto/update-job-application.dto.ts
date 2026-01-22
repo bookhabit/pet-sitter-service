@@ -1,8 +1,8 @@
 import { ApproveStatus } from '@prisma/client';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsNotEmpty } from 'class-validator';
 
 export class UpdateJobApplicationDto {
-  @IsOptional()
-  @IsEnum(ApproveStatus)
-  status?: ApproveStatus;
+  @IsNotEmpty({ message: 'status is required' })
+  @IsEnum(ApproveStatus, { message: 'status must be one of: applying, approved, rejected' })
+  status: ApproveStatus;
 }
