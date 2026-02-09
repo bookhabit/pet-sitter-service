@@ -2,6 +2,13 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+"""Job application status (applying, approved, rejected)"""
+enum ApproveStatus {
+  applying
+  approved
+  rejected
+}
+
 type AuthPayload {
   auth_header: String!
   user_id: String!
@@ -26,6 +33,17 @@ input CreatePetInput {
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
+
+type JobApplicationModel {
+  createdAt: DateTime!
+  id: ID!
+  job: JobModel
+  job_id: String!
+  status: ApproveStatus!
+  updatedAt: DateTime!
+  user: UserModel
+  user_id: String!
+}
 
 input JobFilterInput {
   """Activity 검색어 (포함 검색)"""
@@ -64,6 +82,9 @@ input LoginInput {
 }
 
 type Mutation {
+  """구인공고에 지원 (PetSitter만 가능)"""
+  applyToJob(jobId: String!): JobApplicationModel!
+
   """구인공고 등록 (PetOwner만 가능)"""
   createJob(data: CreateJobInput!): JobModel!
 
@@ -81,6 +102,9 @@ type Mutation {
 
   """구인공고 수정 (본인 또는 Admin만 가능)"""
   updateJob(data: UpdateJobInput!, id: String!): JobModel!
+
+  """지원 상태 변경 (구인공고 작성자만 가능)"""
+  updateJobApplicationStatus(data: UpdateJobApplicationInput!, id: String!): JobApplicationModel!
 
   """사용자 정보 수정"""
   updateUser(data: UpdateUserInput!, id: String!): UserModel!
@@ -143,6 +167,9 @@ type Query {
   """구인공고 상세 조회"""
   job(id: String!): JobModel!
 
+  """특정 구인공고의 지원 목록 조회"""
+  jobApplicationsByJob(jobId: String!): [JobApplicationModel!]!
+
   """구인공고 목록 조회 (필터링 + 페이지네이션)"""
   jobs(filter: JobFilterInput, pagination: PaginationInput): PaginatedJobs!
 
@@ -165,6 +192,10 @@ enum Role {
   Admin
   PetOwner
   PetSitter
+}
+
+input UpdateJobApplicationInput {
+  status: ApproveStatus!
 }
 
 input UpdateJobInput {

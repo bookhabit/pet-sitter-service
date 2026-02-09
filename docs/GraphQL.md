@@ -1155,6 +1155,236 @@ query NextPage {
 
 ---
 
+### 21. 구인공고 지원하기 (PetSitter)
+
+**HTTP Headers:**
+```json
+{
+  "Authorization": "Bearer <PetSitter_JWT_TOKEN>"
+}
+```
+
+**Mutation:**
+```graphql
+mutation ApplyToJob {
+  applyToJob(jobId: "job-uuid") {
+    id
+    status
+    user_id
+    job_id
+    createdAt
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "applyToJob": {
+      "id": "application-uuid",
+      "status": "applying",
+      "user_id": "petsitter-uuid",
+      "job_id": "job-uuid",
+      "createdAt": "2026-02-09T10:30:00Z"
+    }
+  }
+}
+```
+
+**에러 케이스:**
+```json
+// 본인이 등록한 구인공고에 지원
+{
+  "errors": [
+    {
+      "message": "Job creator cannot apply to their own job"
+    }
+  ]
+}
+
+// 이미 지원한 구인공고
+{
+  "errors": [
+    {
+      "message": "Already applied to this job"
+    }
+  ]
+}
+
+// PetOwner가 지원 시도 (역할 권한 에러)
+{
+  "errors": [
+    {
+      "message": "Forbidden resource"
+    }
+  ]
+}
+```
+
+---
+
+### 22. 특정 구인공고의 지원자 목록 조회
+
+**Query:**
+```graphql
+query GetApplications {
+  jobApplicationsByJob(jobId: "job-uuid") {
+    id
+    status
+    user_id
+    user {
+      id
+      email
+      full_name
+      roles
+    }
+    createdAt
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "jobApplicationsByJob": [
+      {
+        "id": "application-uuid-1",
+        "status": "applying",
+        "user_id": "petsitter-uuid-1",
+        "user": {
+          "id": "petsitter-uuid-1",
+          "email": "sitter1@example.com",
+          "full_name": "Kim PetSitter",
+          "roles": ["PetSitter"]
+        },
+        "createdAt": "2026-02-09T10:30:00Z"
+      },
+      {
+        "id": "application-uuid-2",
+        "status": "approved",
+        "user_id": "petsitter-uuid-2",
+        "user": {
+          "id": "petsitter-uuid-2",
+          "email": "sitter2@example.com",
+          "full_name": "Lee PetSitter",
+          "roles": ["PetSitter"]
+        },
+        "createdAt": "2026-02-09T11:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 23. 지원 상태 변경 (PetOwner - 승인/거절)
+
+**HTTP Headers:**
+```json
+{
+  "Authorization": "Bearer <PetOwner_JWT_TOKEN>"
+}
+```
+
+**Mutation (승인):**
+```graphql
+mutation ApproveApplication {
+  updateJobApplicationStatus(
+    id: "application-uuid"
+    data: { status: approved }
+  ) {
+    id
+    status
+    user {
+      id
+      email
+      full_name
+    }
+    job {
+      id
+      activity
+      pets {
+        name
+        species
+      }
+    }
+    updatedAt
+  }
+}
+```
+
+**Mutation (거절):**
+```graphql
+mutation RejectApplication {
+  updateJobApplicationStatus(
+    id: "application-uuid"
+    data: { status: rejected }
+  ) {
+    id
+    status
+    user {
+      id
+      email
+    }
+    updatedAt
+  }
+}
+```
+
+**예상 응답 (승인):**
+```json
+{
+  "data": {
+    "updateJobApplicationStatus": {
+      "id": "application-uuid",
+      "status": "approved",
+      "user": {
+        "id": "petsitter-uuid",
+        "email": "sitter@example.com",
+        "full_name": "Kim PetSitter"
+      },
+      "job": {
+        "id": "job-uuid",
+        "activity": "반려견 산책",
+        "pets": [
+          {
+            "name": "초코",
+            "species": "Dog"
+          }
+        ]
+      },
+      "updatedAt": "2026-02-09T12:00:00Z"
+    }
+  }
+}
+```
+
+**에러 케이스:**
+```json
+// 구인공고 작성자가 아닌 경우
+{
+  "errors": [
+    {
+      "message": "Only the job creator can update application status"
+    }
+  ]
+}
+
+// status 필드 누락
+{
+  "errors": [
+    {
+      "message": "status is required"
+    }
+  ]
+}
+```
+
+---
+
 ## 💡 실전 예시
 
 ### 복잡한 Query 예시 (Field Resolver 사용)

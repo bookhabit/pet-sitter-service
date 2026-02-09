@@ -2,11 +2,12 @@ import { Module } from '@nestjs/common';
 import { JobApplicationController } from './job-application.controller';
 import { JobApplicationByJobController } from './job-application.controller';
 import { JobApplicationService } from './job-application.service';
+import { JobApplicationResolver } from './job-application.resolver';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [PrismaModule],
   controllers: [JobApplicationByJobController, JobApplicationController],
-  providers: [JobApplicationService],
+  providers: [JobApplicationService, JobApplicationResolver],
 })
 export class JobApplicationModule {}
