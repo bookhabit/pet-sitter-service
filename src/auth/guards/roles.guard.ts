@@ -1,5 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { GqlExecutionContext } from '@nestjs/graphql';
 import { Role } from '@prisma/client';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 
@@ -20,7 +21,7 @@ export class RolesGuard implements CanActivate {
     }
 
     // JwtAuthGuard에서 설정된 request.user 가져오기
-    const request = context.switchToHttp().getRequest();
+    const request = this.getRequest(context);
     const user = request.user;
 
     if (!user) {
@@ -38,5 +39,16 @@ export class RolesGuard implements CanActivate {
     }
 
     return true;
+  }
+
+  private getRequest(context: ExecutionContext) {
+    const contextType = context.getType<string>();
+
+    if (contextType === 'graphql') {
+      const gqlContext = GqlExecutionContext.create(context);
+      return gqlContext.getContext().req;
+    }
+
+    return context.switchToHttp().getRequest();
   }
 }

@@ -1,0 +1,70 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthPayload {
+  auth_header: String!
+  user_id: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type Mutation {
+  """사용자 삭제"""
+  deleteUser(id: String!): Boolean!
+
+  """로그인"""
+  login(data: LoginInput!): AuthPayload!
+
+  """회원가입"""
+  register(data: RegisterInput!): UserModel!
+
+  """사용자 정보 수정"""
+  updateUser(data: UpdateUserInput!, id: String!): UserModel!
+}
+
+type Query {
+  """현재 로그인한 사용자 조회"""
+  me: UserModel!
+
+  """특정 사용자 조회"""
+  user(id: String!): UserModel!
+}
+
+input RegisterInput {
+  email: String!
+  full_name: String!
+  password: String!
+  roles: [Role!]!
+}
+
+"""User roles"""
+enum Role {
+  Admin
+  PetOwner
+  PetSitter
+}
+
+input UpdateUserInput {
+  email: String
+  full_name: String
+  password: String
+  roles: [Role!]
+}
+
+type UserModel {
+  createdAt: DateTime!
+  email: String!
+  full_name: String!
+  id: ID!
+  roles: [Role!]!
+  updatedAt: DateTime!
+}

@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { GqlExecutionContext } from '@nestjs/graphql';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as jwt from 'jsonwebtoken';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
@@ -27,7 +28,7 @@ export class JwtAuthGuard implements CanActivate {
       return true; // 토큰 검증 스킵
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = this.getRequest(context);
     const authHeader = request.headers.authorization;
 
     if (!authHeader) {
@@ -84,5 +85,16 @@ export class JwtAuthGuard implements CanActivate {
       }
       throw error;
     }
+  }
+
+  private getRequest(context: ExecutionContext) {
+    const contextType = context.getType<string>();
+
+    if (contextType === 'graphql') {
+      const gqlContext = GqlExecutionContext.create(context);
+      return gqlContext.getContext().req;
+    }
+
+    return context.switchToHttp().getRequest();
   }
 }
