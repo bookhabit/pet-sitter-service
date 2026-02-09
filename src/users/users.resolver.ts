@@ -7,6 +7,8 @@ import { AuthPayload } from './models/auth-payload.model';
 import { RegisterInput } from './inputs/register.input';
 import { LoginInput } from './inputs/login.input';
 import { UpdateUserInput } from './inputs/update-user.input';
+import { JobModel } from '../jobs/models/job.model';
+import { JobApplicationModel } from '../job-application/models/job-application.model';
 import { Public } from '../auth/decorators/public.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Role } from '@prisma/client';
@@ -65,5 +67,17 @@ export class UsersResolver {
   @Query(() => UserModel, { description: '특정 사용자 조회' })
   async user(@Args('id') id: string): Promise<User> {
     return this.usersService.findOne(id);
+  }
+
+  @Query(() => [JobModel], { description: '사용자가 등록한 구인공고 목록' })
+  async userJobs(@Args('userId') userId: string) {
+    const result = await this.usersService.findJobsByUserId(userId);
+    return result.items;
+  }
+
+  @Query(() => [JobApplicationModel], { description: '사용자가 지원한 구인공고 목록' })
+  async userJobApplications(@Args('userId') userId: string) {
+    const result = await this.usersService.findJobApplicationsByUserId(userId);
+    return result.items;
   }
 }

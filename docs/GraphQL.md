@@ -1385,6 +1385,192 @@ mutation RejectApplication {
 
 ---
 
+### 24. 사용자가 등록한 구인공고 목록 조회
+
+**Query:**
+```graphql
+query GetUserJobs {
+  userJobs(userId: "petowner-uuid") {
+    id
+    activity
+    start_time
+    end_time
+    pets {
+      id
+      name
+      species
+      age
+      breed
+    }
+    createdAt
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "userJobs": [
+      {
+        "id": "job-uuid-1",
+        "activity": "반려견 산책",
+        "start_time": "2026-02-10T09:00:00Z",
+        "end_time": "2026-02-10T11:00:00Z",
+        "pets": [
+          {
+            "id": "pet-uuid-1",
+            "name": "초코",
+            "species": "Dog",
+            "age": 3,
+            "breed": "푸들"
+          }
+        ],
+        "createdAt": "2026-02-09T08:00:00Z"
+      },
+      {
+        "id": "job-uuid-2",
+        "activity": "고양이 돌봄",
+        "start_time": "2026-02-12T14:00:00Z",
+        "end_time": "2026-02-12T18:00:00Z",
+        "pets": [
+          {
+            "id": "pet-uuid-2",
+            "name": "나비",
+            "species": "Cat",
+            "age": 2,
+            "breed": "코리안숏헤어"
+          }
+        ],
+        "createdAt": "2026-02-09T10:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+**사용 케이스:**
+- PetOwner가 자신이 등록한 구인공고 확인
+- 관리자가 특정 사용자의 구인공고 확인
+- 마이페이지에서 "내가 올린 구인공고" 목록 표시
+
+---
+
+### 25. 사용자가 지원한 구인공고 목록 조회
+
+**Query:**
+```graphql
+query GetUserApplications {
+  userJobApplications(userId: "petsitter-uuid") {
+    id
+    status
+    createdAt
+    updatedAt
+    job {
+      id
+      activity
+      start_time
+      end_time
+      creator_user_id
+      pets {
+        name
+        species
+        age
+      }
+    }
+    user {
+      id
+      email
+      full_name
+    }
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "userJobApplications": [
+      {
+        "id": "application-uuid-1",
+        "status": "applying",
+        "createdAt": "2026-02-09T10:30:00Z",
+        "updatedAt": "2026-02-09T10:30:00Z",
+        "job": {
+          "id": "job-uuid-1",
+          "activity": "반려견 산책",
+          "start_time": "2026-02-10T09:00:00Z",
+          "end_time": "2026-02-10T11:00:00Z",
+          "creator_user_id": "petowner-uuid-1",
+          "pets": [
+            {
+              "name": "초코",
+              "species": "Dog",
+              "age": 3
+            }
+          ]
+        },
+        "user": {
+          "id": "petsitter-uuid",
+          "email": "sitter@example.com",
+          "full_name": "Kim PetSitter"
+        }
+      },
+      {
+        "id": "application-uuid-2",
+        "status": "approved",
+        "createdAt": "2026-02-09T11:00:00Z",
+        "updatedAt": "2026-02-09T12:00:00Z",
+        "job": {
+          "id": "job-uuid-2",
+          "activity": "고양이 돌봄",
+          "start_time": "2026-02-12T14:00:00Z",
+          "end_time": "2026-02-12T18:00:00Z",
+          "creator_user_id": "petowner-uuid-2",
+          "pets": [
+            {
+              "name": "나비",
+              "species": "Cat",
+              "age": 2
+            }
+          ]
+        },
+        "user": {
+          "id": "petsitter-uuid",
+          "email": "sitter@example.com",
+          "full_name": "Kim PetSitter"
+        }
+      }
+    ]
+  }
+}
+```
+
+**필터링 예시 (클라이언트 측):**
+```graphql
+# 승인된 지원만 보기
+query GetApprovedApplications {
+  userJobApplications(userId: "petsitter-uuid") {
+    id
+    status
+    job {
+      activity
+      start_time
+    }
+  }
+}
+```
+
+클라이언트에서 `filter(app => app.status === 'approved')` 처리
+
+**사용 케이스:**
+- PetSitter가 자신이 지원한 구인공고 확인
+- 지원 상태별 필터링 (대기중/승인됨/거절됨)
+- 마이페이지에서 "내 지원 내역" 목록 표시
+
+---
+
 ## 💡 실전 예시
 
 ### 복잡한 Query 예시 (Field Resolver 사용)

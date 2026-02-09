@@ -178,6 +178,12 @@ type Query {
 
   """특정 사용자 조회"""
   user(id: String!): UserModel!
+
+  """사용자가 지원한 구인공고 목록"""
+  userJobApplications(userId: String!): [JobApplicationModel!]!
+
+  """사용자가 등록한 구인공고 목록"""
+  userJobs(userId: String!): [JobModel!]!
 }
 
 input RegisterInput {
