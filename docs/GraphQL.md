@@ -586,6 +586,575 @@ query Me {
 
 ---
 
+### 10. 구인공고 등록 (PetOwner 역할 필요)
+
+**⚠️ 주의: PetOwner 역할로 회원가입한 사용자의 JWT 토큰 필요**
+
+먼저 PetOwner로 회원가입:
+```graphql
+mutation RegisterPetOwner {
+  register(data: {
+    email: "owner@example.com"
+    full_name: "Pet Owner"
+    password: "password123"
+    roles: [PetOwner]
+  }) {
+    id
+    email
+    roles
+  }
+}
+```
+
+로그인하여 JWT 토큰 획득:
+```graphql
+mutation LoginOwner {
+  login(data: {
+    email: "owner@example.com"
+    password: "password123"
+  }) {
+    user_id
+    auth_header
+  }
+}
+```
+
+HTTP Headers 설정 후 구인공고 등록:
+```graphql
+mutation CreateJob {
+  createJob(data: {
+    start_time: "2026-02-10T09:00:00Z"
+    end_time: "2026-02-10T18:00:00Z"
+    activity: "산책 및 놀이 활동 도우미를 구합니다"
+    pets: [
+      {
+        name: "초코"
+        age: 3
+        species: Dog
+        breed: "골든 리트리버"
+        size: "대형"
+      },
+      {
+        name: "모카"
+        age: 2
+        species: Cat
+        breed: "코리안 숏헤어"
+      }
+    ]
+  }) {
+    id
+    creator_user_id
+    start_time
+    end_time
+    activity
+    pets {
+      id
+      name
+      age
+      species
+      breed
+      size
+    }
+    createdAt
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "createJob": {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "creator_user_id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+      "start_time": "2026-02-10T09:00:00.000Z",
+      "end_time": "2026-02-10T18:00:00.000Z",
+      "activity": "산책 및 놀이 활동 도우미를 구합니다",
+      "pets": [
+        {
+          "id": "pet-uuid-1",
+          "name": "초코",
+          "age": 3,
+          "species": "Dog",
+          "breed": "골든 리트리버",
+          "size": "대형"
+        },
+        {
+          "id": "pet-uuid-2",
+          "name": "모카",
+          "age": 2,
+          "species": "Cat",
+          "breed": "코리안 숏헤어",
+          "size": null
+        }
+      ],
+      "createdAt": "2026-02-09T15:00:00.000Z"
+    }
+  }
+}
+```
+
+---
+
+### 11. 구인공고 조회 (인증 필요)
+
+```graphql
+query GetJob {
+  job(id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890") {
+    id
+    creator_user_id
+    start_time
+    end_time
+    activity
+    pets {
+      name
+      age
+      species
+      breed
+      size
+    }
+    createdAt
+    updatedAt
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "job": {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "creator_user_id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+      "start_time": "2026-02-10T09:00:00.000Z",
+      "end_time": "2026-02-10T18:00:00.000Z",
+      "activity": "산책 및 놀이 활동 도우미를 구합니다",
+      "pets": [
+        {
+          "name": "초코",
+          "age": 3,
+          "species": "Dog",
+          "breed": "골든 리트리버",
+          "size": "대형"
+        },
+        {
+          "name": "모카",
+          "age": 2,
+          "species": "Cat",
+          "breed": "코리안 숏헤어",
+          "size": null
+        }
+      ],
+      "createdAt": "2026-02-09T15:00:00.000Z",
+      "updatedAt": "2026-02-09T15:00:00.000Z"
+    }
+  }
+}
+```
+
+---
+
+### 12. 구인공고 수정 (본인 또는 Admin만)
+
+```graphql
+mutation UpdateJob {
+  updateJob(
+    id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    data: {
+      activity: "산책 및 놀이 활동 도우미를 구합니다 (수정됨)"
+      end_time: "2026-02-10T20:00:00Z"
+    }
+  ) {
+    id
+    activity
+    end_time
+    updatedAt
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "updateJob": {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "activity": "산책 및 놀이 활동 도우미를 구합니다 (수정됨)",
+      "end_time": "2026-02-10T20:00:00.000Z",
+      "updatedAt": "2026-02-09T15:30:00.000Z"
+    }
+  }
+}
+```
+
+**⚠️ 권한 에러 (다른 사용자가 수정 시도):**
+```json
+{
+  "errors": [
+    {
+      "message": "You can only update your own job",
+      "extensions": {
+        "code": "FORBIDDEN"
+      }
+    }
+  ],
+  "data": null
+}
+```
+
+---
+
+### 13. 구인공고 삭제 (본인 또는 Admin만)
+
+```graphql
+mutation DeleteJob {
+  deleteJob(id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "deleteJob": true
+  }
+}
+```
+
+**⚠️ 권한 에러 (다른 사용자가 삭제 시도):**
+```json
+{
+  "errors": [
+    {
+      "message": "You can only delete your own job",
+      "extensions": {
+        "code": "FORBIDDEN"
+      }
+    }
+  ],
+  "data": null
+}
+```
+
+---
+
+### 14. 구인공고 등록 실패 케이스
+
+#### PetSitter 역할로 등록 시도 (권한 없음)
+
+```graphql
+mutation CreateJobAsSitter {
+  createJob(data: {
+    start_time: "2026-02-10T09:00:00Z"
+    end_time: "2026-02-10T18:00:00Z"
+    activity: "산책 도우미"
+    pets: [
+      {
+        name: "멍멍이"
+        age: 2
+        species: Dog
+        breed: "포메라니안"
+      }
+    ]
+  }) {
+    id
+  }
+}
+```
+
+**예상 응답 (에러):**
+```json
+{
+  "errors": [
+    {
+      "message": "Forbidden resource",
+      "extensions": {
+        "code": "FORBIDDEN"
+      }
+    }
+  ],
+  "data": null
+}
+```
+
+#### 유효성 검증 실패 (activity 글자수 부족)
+
+```graphql
+mutation CreateJobInvalid {
+  createJob(data: {
+    start_time: "2026-02-10T09:00:00Z"
+    end_time: "2026-02-10T18:00:00Z"
+    activity: "짧음"
+    pets: [
+      {
+        name: "멍멍이"
+        age: 2
+        species: Dog
+        breed: "포메라니안"
+      }
+    ]
+  }) {
+    id
+  }
+}
+```
+
+**예상 응답 (에러):**
+```json
+{
+  "errors": [
+    {
+      "message": "Bad Request Exception",
+      "extensions": {
+        "code": "BAD_USER_INPUT",
+        "validationErrors": [
+          "activity must be at least 5 characters long"
+        ]
+      }
+    }
+  ],
+  "data": null
+}
+```
+
+---
+
+### 15. 구인공고 목록 조회 (필터링 + 페이지네이션)
+
+**기본 조회:**
+```graphql
+query Jobs {
+  jobs {
+    items {
+      id
+      activity
+      start_time
+      end_time
+      pets {
+        name
+        species
+        age
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "jobs": {
+      "items": [
+        {
+          "id": "job-uuid-1",
+          "activity": "산책 도우미",
+          "start_time": "2026-02-10T09:00:00.000Z",
+          "end_time": "2026-02-10T18:00:00.000Z",
+          "pets": [
+            {
+              "name": "초코",
+              "species": "Dog",
+              "age": 3
+            }
+          ]
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": true,
+        "endCursor": "job-uuid-20"
+      }
+    }
+  }
+}
+```
+
+---
+
+### 16. 구인공고 목록 - 날짜 필터링
+
+```graphql
+query FilteredJobs {
+  jobs(
+    filter: {
+      startTimeAfter: "2026-02-01T00:00:00Z"
+      endTimeBefore: "2026-12-31T23:59:59Z"
+    }
+  ) {
+    items {
+      id
+      activity
+      start_time
+      end_time
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+```
+
+---
+
+### 17. 구인공고 목록 - Activity 검색
+
+```graphql
+query SearchJobs {
+  jobs(
+    filter: {
+      activity: "산책"
+    }
+  ) {
+    items {
+      id
+      activity
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}
+```
+
+---
+
+### 18. 구인공고 목록 - Pet 필터링
+
+```graphql
+query FilterByPets {
+  jobs(
+    filter: {
+      pets: {
+        species: [Dog]
+        ageAbove: 1
+        ageBelow: 5
+      }
+    }
+  ) {
+    items {
+      id
+      activity
+      pets {
+        name
+        species
+        age
+      }
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}
+```
+
+---
+
+### 19. 구인공고 목록 - 복합 필터 + 페이지네이션
+
+```graphql
+query ComplexSearch {
+  jobs(
+    filter: {
+      startTimeAfter: "2026-02-01T00:00:00Z"
+      activity: "산책"
+      pets: {
+        species: [Dog, Cat]
+        ageBelow: 10
+      }
+    }
+    pagination: {
+      limit: 10
+    }
+  ) {
+    items {
+      id
+      activity
+      start_time
+      pets {
+        name
+        species
+        age
+        breed
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+```
+
+---
+
+### 20. 구인공고 목록 - Cursor 기반 페이지네이션
+
+```graphql
+# 첫 페이지
+query FirstPage {
+  jobs(pagination: { limit: 10 }) {
+    items {
+      id
+      activity
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+# 다음 페이지 (endCursor 사용)
+query NextPage {
+  jobs(
+    pagination: {
+      limit: 10
+      cursor: "job-uuid-10"
+    }
+  ) {
+    items {
+      id
+      activity
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "jobs": {
+      "items": [
+        {
+          "id": "job-uuid-11",
+          "activity": "반려견 산책"
+        },
+        {
+          "id": "job-uuid-12",
+          "activity": "고양이 돌봄"
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": true,
+        "endCursor": "job-uuid-20"
+      }
+    }
+  }
+}
+```
+
+---
+
 ## 💡 실전 예시
 
 ### 복잡한 Query 예시 (Field Resolver 사용)

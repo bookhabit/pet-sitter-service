@@ -6,6 +6,11 @@ import { Job, Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { SearchJobsQueryDto } from './dto/search-job-query.dto';
 
+// Job with Pets included
+type JobWithPets = Prisma.JobGetPayload<{
+    include: { pets: true }
+}>;
+
 @Injectable()
 export class JobsService {
     constructor(private readonly prisma: PrismaService) {}
@@ -55,7 +60,7 @@ export class JobsService {
         return job;
     }
 
-    async findAll(query: SearchJobsQueryDto): Promise<{ items: Job[]; cursor: string | null }> {
+    async findAll(query: SearchJobsQueryDto): Promise<{ items: JobWithPets[]; cursor: string | null }> {
         console.log('🔍 [JobsService.findAll] 요청된 쿼리 파라미터:', JSON.stringify(query, null, 2));
         
         // Where 조건 구성

@@ -1,10 +1,6 @@
 import { IsString, IsDateString, IsNotEmpty, IsInt, Min, Max, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsEnum, IsOptional, MinLength, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
-
-export enum PetSpecies {
-    Cat = 'Cat',
-    Dog = 'Dog',
-}
+import { PetSpecies } from '@prisma/client';
 
 export class PetDto {
     @IsString({ message: 'name must be a string' })
