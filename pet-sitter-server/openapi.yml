@@ -7,6 +7,8 @@ tags:
     description: User-related operations
   - name: Jobs
     description: Job-related operations
+  - name: Photos
+    description: Photo upload and management
 paths:
   /users:
     post:
@@ -355,6 +357,201 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JobApplication'
+  /photos/upload:
+    post:
+      tags:
+      - Photos
+      summary: Upload Multiple Photos (Pre-upload)
+      description: |
+        여러 파일을 한 번에 업로드합니다. entity와 미연결 상태(orphan)로 저장됩니다.
+        반환된 Photo IDs를 POST /jobs 등의 요청 body에 포함해 연결하세요.
+      operationId: uploadPhotos
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - files
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  maxItems: 10
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Photo'
+        '400':
+          description: Bad Request (invalid file type or size)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+  /users/{id}/photos:
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      tags:
+      - Photos
+      summary: Upload User Profile Photo
+      operationId: uploadUserPhoto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '400':
+          description: Bad Request (invalid file type or size)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+  /jobs/{id}/photos:
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      tags:
+      - Photos
+      summary: Upload Job Photo
+      operationId: uploadJobPhoto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '400':
+          description: Bad Request (invalid file type or size)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+  /pets/{id}/photos:
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      tags:
+      - Photos
+      summary: Upload Pet Photo
+      operationId: uploadPetPhoto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+        '400':
+          description: Bad Request (invalid file type or size)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+        '404':
+          description: Pet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+  /photos/{id}:
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    delete:
+      tags:
+      - Photos
+      summary: Delete Photo
+      operationId: deletePhoto
+      responses:
+        '204':
+          description: No Content
+        '403':
+          description: Forbidden (not the uploader)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+        '404':
+          description: Photo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
   /sessions:
     post:
       tags:
@@ -521,6 +718,12 @@ components:
           maxItems: 10
           items:
             $ref: '#/components/schemas/CreatePetRequest'
+        photo_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: POST /photos/upload 으로 사전 업로드한 공고 사진 ID 목록
     UpdateJobRequest:
       type: object
       properties:
@@ -600,6 +803,12 @@ components:
         size:
           type: string
           description: Size of the pet (required for Dog)
+        photo_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: POST /photos/upload 으로 사전 업로드한 Photo ID 목록
     JobApplication:
       type: object
       properties:
@@ -642,7 +851,56 @@ components:
           type: string
         auth_header:
           type: string
-    OASError: 
+    Photo:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        url:
+          type: string
+          description: Publicly accessible URL for the photo
+        file_name:
+          type: string
+          description: Stored file name (UUID-based)
+        original_name:
+          type: string
+          description: Original uploaded file name
+        mime_type:
+          type: string
+          enum: [image/jpeg, image/png, image/webp]
+        size:
+          type: integer
+          description: File size in bytes
+        uploader_id:
+          type: string
+          readOnly: true
+        user_id:
+          type: string
+          nullable: true
+          description: Profile photo target user ID
+        job_id:
+          type: string
+          nullable: true
+          description: Associated job ID
+        pet_id:
+          type: string
+          nullable: true
+          description: Associated pet ID
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - id
+        - url
+        - file_name
+        - original_name
+        - mime_type
+        - size
+        - uploader_id
+        - createdAt
+    OASError:
       type: object
       properties:
         message:

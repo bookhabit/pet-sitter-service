@@ -1,5 +1,5 @@
 import { InputType, Field, Int } from '@nestjs/graphql';
-import { IsString, IsInt, Min, Max, IsEnum, IsOptional, MinLength, MaxLength, IsNotEmpty } from 'class-validator';
+import { IsString, IsUUID, IsInt, Min, Max, IsEnum, IsOptional, IsArray, MinLength, MaxLength, IsNotEmpty } from 'class-validator';
 import { PetSpecies } from '@prisma/client';
 
 @InputType()
@@ -30,4 +30,10 @@ export class CreatePetInput {
   @IsOptional()
   @IsString({ message: 'size must be a string' })
   size?: string;
+
+  @Field(() => [String], { nullable: true, description: '사전 업로드된 사진 ID 목록' })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  photo_ids?: string[];
 }

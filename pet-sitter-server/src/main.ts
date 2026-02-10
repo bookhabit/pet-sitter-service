@@ -1,13 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { parse } from 'yaml';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // 업로드 파일 정적 서빙
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
   
   // 전역 ValidationPipe 설정
   app.useGlobalPipes(

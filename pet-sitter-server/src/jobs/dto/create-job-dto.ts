@@ -1,4 +1,4 @@
-import { IsString, IsDateString, IsNotEmpty, IsInt, Min, Max, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsEnum, IsOptional, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsUUID, IsDateString, IsNotEmpty, IsInt, Min, Max, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsEnum, IsOptional, MinLength, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PetSpecies } from '@prisma/client';
 
@@ -24,6 +24,11 @@ export class PetDto {
     @IsOptional()
     @IsString({ message: 'size must be a string' })
     size?: string;
+
+    @IsOptional()
+    @IsArray()
+    @IsUUID('4', { each: true })
+    photo_ids?: string[];
 }
 
 export class CreateJobDto {
@@ -45,4 +50,9 @@ export class CreateJobDto {
     @ValidateNested({ each: true })
     @Type(() => PetDto)
     pets: PetDto[];
+
+    @IsOptional()
+    @IsArray()
+    @IsUUID('4', { each: true })
+    photo_ids?: string[];
 }

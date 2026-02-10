@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PhotosService } from '../photos/photos.service';
 import { CreateJobDto } from './dto/create-job-dto';
 import { UpdateJobDto } from './dto/update-job-dto';
 import { Job, Prisma } from '@prisma/client';
@@ -13,7 +14,10 @@ type JobWithPets = Prisma.JobGetPayload<{
 
 @Injectable()
 export class JobsService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly photosService: PhotosService,
+    ) {}
 
     async create(createJobDto: CreateJobDto, creatorUserId: string): Promise<Job> {
         // 날짜 유효성 검사
@@ -32,6 +36,12 @@ export class JobsService {
             throw new BadRequestException('start_time must be before end_time');
         }
 
+        // 각 pet에 할당할 id를 미리 생성 (사진 연결에 사용)
+        const petsWithId = createJobDto.pets.map(pet => ({
+            id: randomUUID(),
+            ...pet,
+        }));
+
         // Job 생성
         const job = await this.prisma.job.create({
             data: {
@@ -41,8 +51,8 @@ export class JobsService {
                 end_time: endTime,
                 activity: createJobDto.activity,
                 pets: {
-                    create: createJobDto.pets.map(pet => ({
-                        id: randomUUID(),
+                    create: petsWithId.map(pet => ({
+                        id: pet.id,
                         name: pet.name,
                         age: pet.age,
                         species: pet.species,
@@ -53,9 +63,21 @@ export class JobsService {
             },
             include: {
                 pets: true,
-                // creator: true,
             },
         });
+
+        // 사전 업로드된 사진 연결
+        if (createJobDto.photo_ids?.length) {
+            await this.photosService.attachToJob(createJobDto.photo_ids, job.id);
+        }
+
+        // 펫별 사진 연결
+        for (let i = 0; i < petsWithId.length; i++) {
+            const petPhotoIds = createJobDto.pets[i].photo_ids;
+            if (petPhotoIds?.length) {
+                await this.photosService.attachToPet(petPhotoIds, petsWithId[i].id);
+            }
+        }
 
         return job;
     }

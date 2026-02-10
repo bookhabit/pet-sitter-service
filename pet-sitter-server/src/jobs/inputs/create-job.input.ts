@@ -1,5 +1,5 @@
 import { InputType, Field } from '@nestjs/graphql';
-import { IsString, IsDateString, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, MinLength, MaxLength, IsNotEmpty } from 'class-validator';
+import { IsString, IsUUID, IsDateString, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, MinLength, MaxLength, IsNotEmpty, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreatePetInput } from './create-pet.input';
 
@@ -27,4 +27,10 @@ export class CreateJobInput {
   @ValidateNested({ each: true })
   @Type(() => CreatePetInput)
   pets: CreatePetInput[];
+
+  @Field(() => [String], { nullable: true, description: '사전 업로드된 공고 사진 ID 목록' })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  photo_ids?: string[];
 }

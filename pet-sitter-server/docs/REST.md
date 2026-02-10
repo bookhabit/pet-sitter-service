@@ -13,6 +13,7 @@
 5. [인증 시스템](#인증-시스템)
 6. [테스트 방법](#테스트-방법)
 7. [OpenAPI(Swagger) 문서](#openapi-문서)
+8. [사진 업로드](./PHOTO_UPLOAD.md#rest-api)
 
 ---
 

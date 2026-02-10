@@ -15,15 +15,21 @@ model User {
   roles       Role[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // 관계: User creates Job (1:N)
   createdJobs Job[] @relation("JobCreator")
-  
+
   // 관계: User applies JobApplication (1:N)
   jobApplications JobApplication[]
-  
+
   // 관계: User has Sessions (1:N)
   sessions Session[]
+
+  // 관계: User uploaded Photos (1:N)
+  uploadedPhotos Photo[] @relation("UploadedPhotos")
+
+  // 관계: User profile Photos (1:N)
+  photos Photo[] @relation("UserPhotos")
 }
 
 enum Role {
@@ -48,7 +54,10 @@ model Job {
   
   // 관계: Job has JobApplications (1:N)
   jobApplications JobApplication[]
-  
+
+  // 관계: Job has Photos (1:N)
+  photos Photo[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -64,7 +73,10 @@ model Pet {
   // 관계: Pet belongs to Job (N:1)
   job_id String
   job Job @relation(fields: [job_id], references: [id])
-  
+
+  // 관계: Pet has Photos (1:N)
+  photos Photo[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -104,4 +116,29 @@ model Session {
   user User @relation(fields: [user_id], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Photo {
+  id            String   @id @default(uuid())
+  url           String
+  file_name     String
+  original_name String
+  mime_type     String
+  size          Int
+
+  // 업로더
+  uploader_id String
+  uploader    User   @relation("UploadedPhotos", fields: [uploader_id], references: [id])
+
+  // 연결 대상 (셋 중 하나만 설정)
+  user_id String?
+  user    User?   @relation("UserPhotos", fields: [user_id], references: [id])
+
+  job_id String?
+  job    Job?    @relation(fields: [job_id], references: [id])
+
+  pet_id String?
+  pet    Pet?    @relation(fields: [pet_id], references: [id])
+
+  createdAt DateTime @default(now())
 }
