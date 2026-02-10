@@ -1,5 +1,6 @@
 import { ObjectType, Field, ID, Int, registerEnumType } from '@nestjs/graphql';
 import { PetSpecies } from '@prisma/client';
+import { PhotoModel } from '../../photos/models/photo.model';
 
 // Enum 등록 (GraphQL 스키마에 노출)
 registerEnumType(PetSpecies, {
@@ -29,6 +30,9 @@ export class PetModel {
 
   @Field()
   job_id: string;
+
+  @Field(() => [PhotoModel], { description: '반려동물에 첨부된 사진 목록' })
+  photos: PhotoModel[];
 
   @Field()
   createdAt: Date;

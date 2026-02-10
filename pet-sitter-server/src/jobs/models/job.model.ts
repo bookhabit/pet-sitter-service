@@ -1,5 +1,6 @@
 import { ObjectType, Field, ID } from '@nestjs/graphql';
 import { PetModel } from './pet.model';
+import { PhotoModel } from '../../photos/models/photo.model';
 
 @ObjectType()
 export class JobModel {
@@ -20,6 +21,9 @@ export class JobModel {
 
   @Field(() => [PetModel])
   pets: PetModel[];
+
+  @Field(() => [PhotoModel], { description: '공고에 첨부된 사진 목록' })
+  photos: PhotoModel[];
 
   @Field()
   createdAt: Date;

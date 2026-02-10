@@ -1,9 +1,21 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { User, Prisma, Job, JobApplication } from '@prisma/client';
+import { Prisma, JobApplication } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user-dto';
 import { UpdateUserDto } from './dto/update-user-dto';
 import { randomUUID } from 'crypto';
+
+const USER_INCLUDE = {
+  photos: true,
+} as const;
+
+const JOB_WITH_PHOTOS_INCLUDE = {
+  pets: { include: { photos: true } },
+  photos: true,
+} as const;
+
+type UserWithPhotos = Prisma.UserGetPayload<{ include: typeof USER_INCLUDE }>;
+type JobWithPhotos = Prisma.JobGetPayload<{ include: typeof JOB_WITH_PHOTOS_INCLUDE }>;
 
 @Injectable()
 export class UsersService {
@@ -21,19 +33,20 @@ export class UsersService {
   }
   
 
-  async create(dto: CreateUserDto): Promise<User> {
+  async create(dto: CreateUserDto): Promise<UserWithPhotos> {
     const existsUser = await this.prisma.user.findUnique({
       where: { email: dto.email }
     })
     if (existsUser) {
       throw new ConflictException('이미 존재하는 이메일입니다.');
     }
-    return this.prisma.user.create({ data: this.toCreateInput(dto) });
+    return this.prisma.user.create({ data: this.toCreateInput(dto), include: USER_INCLUDE });
   }
 
-  async findOne(id: string): Promise<User> {
+  async findOne(id: string): Promise<UserWithPhotos> {
     const user = await this.prisma.user.findUnique({
       where: { id },
+      include: USER_INCLUDE,
     });
 
     if (!user) {
@@ -43,7 +56,7 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, dto: UpdateUserDto): Promise<User> {
+  async update(id: string, dto: UpdateUserDto): Promise<UserWithPhotos> {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -70,6 +83,7 @@ export class UsersService {
         ...(dto.password && { password: dto.password }),
         ...(dto.roles && { roles: dto.roles }),
       },
+      include: USER_INCLUDE,
     });
   }
 
@@ -87,7 +101,7 @@ export class UsersService {
     });
   }
 
-  async findJobsByUserId(id: string): Promise<{ items: Job[] }> {
+  async findJobsByUserId(id: string): Promise<{ items: JobWithPhotos[] }> {
     // 사용자 존재 확인
     const user = await this.prisma.user.findUnique({
       where: { id },
@@ -99,9 +113,7 @@ export class UsersService {
 
     const jobs = await this.prisma.job.findMany({
       where: { creator_user_id: id },
-      include: {
-        pets: true,
-      },
+      include: JOB_WITH_PHOTOS_INCLUDE,
     });
 
     return { items: jobs };
@@ -120,12 +132,8 @@ export class UsersService {
     const jobApplications = await this.prisma.jobApplication.findMany({
       where: { user_id: id },
       include: {
-        user: true,
-        job: {
-          include: {
-            pets: true,
-          },
-        },
+        user: { include: USER_INCLUDE },
+        job: { include: JOB_WITH_PHOTOS_INCLUDE },
       },
     });
 

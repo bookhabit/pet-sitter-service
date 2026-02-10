@@ -3,14 +3,18 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PhotosService } from '../photos/photos.service';
 import { CreateJobDto } from './dto/create-job-dto';
 import { UpdateJobDto } from './dto/update-job-dto';
-import { Job, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { SearchJobsQueryDto } from './dto/search-job-query.dto';
 
-// Job with Pets included
-type JobWithPets = Prisma.JobGetPayload<{
-    include: { pets: true }
-}>;
+// 모든 Job 조회에서 공통으로 사용하는 include 정의
+// as const 로 Prisma 타입 추론 정확성 보장
+const JOB_INCLUDE = {
+    pets: { include: { photos: true } },
+    photos: true,
+} as const;
+
+type JobWithPhotos = Prisma.JobGetPayload<{ include: typeof JOB_INCLUDE }>;
 
 @Injectable()
 export class JobsService {
@@ -19,7 +23,7 @@ export class JobsService {
         private readonly photosService: PhotosService,
     ) {}
 
-    async create(createJobDto: CreateJobDto, creatorUserId: string): Promise<Job> {
+    async create(createJobDto: CreateJobDto, creatorUserId: string): Promise<JobWithPhotos> {
         // 날짜 유효성 검사
         const startTime = new Date(createJobDto.start_time);
         const endTime = new Date(createJobDto.end_time);
@@ -42,10 +46,12 @@ export class JobsService {
             ...pet,
         }));
 
+        const jobId = randomUUID();
+
         // Job 생성
-        const job = await this.prisma.job.create({
+        await this.prisma.job.create({
             data: {
-                id: randomUUID(),
+                id: jobId,
                 creator_user_id: creatorUserId,
                 start_time: startTime,
                 end_time: endTime,
@@ -61,14 +67,11 @@ export class JobsService {
                     })),
                 },
             },
-            include: {
-                pets: true,
-            },
         });
 
         // 사전 업로드된 사진 연결
         if (createJobDto.photo_ids?.length) {
-            await this.photosService.attachToJob(createJobDto.photo_ids, job.id);
+            await this.photosService.attachToJob(createJobDto.photo_ids, jobId);
         }
 
         // 펫별 사진 연결
@@ -79,10 +82,14 @@ export class JobsService {
             }
         }
 
-        return job;
+        // 사진 연결 완료 후 최신 상태로 재조회
+        return this.prisma.job.findUniqueOrThrow({
+            where: { id: jobId },
+            include: JOB_INCLUDE,
+        });
     }
 
-    async findAll(query: SearchJobsQueryDto): Promise<{ items: JobWithPets[]; cursor: string | null }> {
+    async findAll(query: SearchJobsQueryDto): Promise<{ items: JobWithPhotos[]; cursor: string | null }> {
         console.log('🔍 [JobsService.findAll] 요청된 쿼리 파라미터:', JSON.stringify(query, null, 2));
         
         // Where 조건 구성
@@ -228,10 +235,7 @@ export class JobsService {
         const startTime = Date.now();
         const jobs = await this.prisma.job.findMany({
             where,
-            include: {
-                pets: true,
-                // creator: true,
-            },
+            include: JOB_INCLUDE,
             orderBy,
             take,
             cursor,
@@ -257,13 +261,10 @@ export class JobsService {
         };
     }
 
-    async findOne(id: string): Promise<Job | null> {
+    async findOne(id: string): Promise<JobWithPhotos> {
         const job = await this.prisma.job.findUnique({
             where: { id },
-            include: {
-                pets: true,
-                creator: true,
-            },
+            include: JOB_INCLUDE,
         });
 
         if (!job) {
@@ -273,7 +274,7 @@ export class JobsService {
         return job;
     }
 
-    async update(id: string, updateJobDto: UpdateJobDto, currentUserId: string): Promise<Job> {
+    async update(id: string, updateJobDto: UpdateJobDto, currentUserId: string): Promise<JobWithPhotos> {
         const job = await this.prisma.job.findUnique({
             where: { id },
         });
@@ -347,10 +348,7 @@ export class JobsService {
         return this.prisma.job.update({
             where: { id },
             data: updateData,
-            include: {
-                pets: true,
-                // creator: true,
-            },
+            include: JOB_INCLUDE,
         });
     }
 

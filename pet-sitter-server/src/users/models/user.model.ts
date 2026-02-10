@@ -1,5 +1,6 @@
 import { ObjectType, Field, ID, registerEnumType } from '@nestjs/graphql';
 import { Role } from '@prisma/client';
+import { PhotoModel } from '../../photos/models/photo.model';
 
 // Enum 등록 (GraphQL 스키마에 노출)
 registerEnumType(Role, {
@@ -20,6 +21,9 @@ export class UserModel {
 
   @Field(() => [Role])
   roles: Role[];
+
+  @Field(() => [PhotoModel], { description: '프로필 사진 목록' })
+  photos: PhotoModel[];
 
   @Field()
   createdAt: Date;

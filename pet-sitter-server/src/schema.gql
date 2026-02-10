@@ -89,6 +89,9 @@ type JobModel {
   end_time: DateTime!
   id: ID!
   pets: [PetModel!]!
+
+  """공고에 첨부된 사진 목록"""
+  photos: [PhotoModel!]!
   start_time: DateTime!
   updatedAt: DateTime!
 }
@@ -184,6 +187,9 @@ type PetModel {
   id: ID!
   job_id: String!
   name: String!
+
+  """반려동물에 첨부된 사진 목록"""
+  photos: [PhotoModel!]!
   size: String
   species: PetSpecies!
   updatedAt: DateTime!
@@ -269,6 +275,9 @@ type UserModel {
   email: String!
   full_name: String!
   id: ID!
+
+  """프로필 사진 목록"""
+  photos: [PhotoModel!]!
   roles: [Role!]!
   updatedAt: DateTime!
 }

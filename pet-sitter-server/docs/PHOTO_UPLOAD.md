@@ -122,14 +122,35 @@ curl -X POST http://localhost:3000/jobs \
   "start_time": "2026-03-01T09:00:00Z",
   "end_time": "2026-03-01T18:00:00Z",
   "activity": "강아지 산책 및 돌봄 서비스",
+  "photos": [
+    {
+      "id": "photo-uuid-1",
+      "url": "/uploads/temp/aaaa-1111.jpg",
+      "job_id": "job-uuid",
+      "pet_id": null,
+      "user_id": null
+    }
+  ],
   "pets": [
-    { "id": "pet-uuid", "name": "멍멍이", ... }
+    {
+      "id": "pet-uuid",
+      "name": "멍멍이",
+      "photos": [
+        {
+          "id": "photo-uuid-2",
+          "url": "/uploads/temp/bbbb-2222.png",
+          "pet_id": "pet-uuid",
+          "job_id": null,
+          "user_id": null
+        }
+      ]
+    }
   ],
   "createdAt": "2026-02-10T12:00:00Z"
 }
 ```
 
-> `photo_ids`에 포함된 사진들은 자동으로 해당 job/pet에 연결됩니다.
+> `photo_ids`에 포함된 사진들은 자동으로 해당 job/pet에 연결되며, 조회 시 `photos` 배열로 반환됩니다.
 
 ---
 
