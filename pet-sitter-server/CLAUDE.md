@@ -90,3 +90,9 @@ module-name/
 - No summaries
 
 User may override any rule by explicit instruction.
+
+## Note
+
+All newly added features and API changes must be implemented in code first, and the `openapi.yml` file must be updated accordingly to stay fully synchronized with the current REST API implementation.
+
+In addition, GraphQL schemas, queries, and mutations must be properly documented and kept in sync with the implementation, similar to how `openapi.yml` is maintained for REST APIs.
