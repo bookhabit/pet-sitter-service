@@ -46,6 +46,11 @@ input CreatePetInput {
   species: PetSpecies!
 }
 
+input CreateReviewInput {
+  comment: String
+  rating: Int!
+}
+
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
@@ -108,11 +113,17 @@ type Mutation {
   """구인공고 등록 (PetOwner만 가능)"""
   createJob(data: CreateJobInput!): JobModel!
 
+  """리뷰 작성 (PetOwner 또는 PetSitter)"""
+  createReview(data: CreateReviewInput!, jobId: ID!): ReviewModel!
+
   """구인공고 삭제 (본인 또는 Admin만 가능)"""
   deleteJob(id: String!): Boolean!
 
   """사진 삭제 (업로더만 가능)"""
   deletePhoto(id: String!): Boolean!
+
+  """리뷰 삭제 (작성자만)"""
+  deleteReview(id: ID!): Boolean!
 
   """사용자 삭제"""
   deleteUser(id: String!): Boolean!
@@ -236,6 +247,9 @@ type Query {
 
   """사용자가 등록한 구인공고 목록"""
   userJobs(userId: String!): [JobModel!]!
+
+  """특정 사용자가 받은 리뷰 목록"""
+  userReviews(sort: String, userId: ID!): [ReviewModel!]!
 }
 
 input RegisterInput {
@@ -243,6 +257,17 @@ input RegisterInput {
   full_name: String!
   password: String!
   roles: [Role!]!
+}
+
+type ReviewModel {
+  comment: String
+  createdAt: DateTime!
+  id: ID!
+  job_id: String!
+  rating: Int!
+  reviewee_id: String!
+  reviewer_id: String!
+  updatedAt: DateTime!
 }
 
 """User roles"""

@@ -30,6 +30,12 @@ model User {
 
   // 관계: User profile Photos (1:N)
   photos Photo[] @relation("UserPhotos")
+
+  // 관계: User writes Reviews (1:N)
+  reviewsGiven Review[] @relation("ReviewsGiven")
+
+  // 관계: User receives Reviews (1:N)
+  reviewsReceived Review[] @relation("ReviewsReceived")
 }
 
 enum Role {
@@ -57,6 +63,9 @@ model Job {
 
   // 관계: Job has Photos (1:N)
   photos Photo[]
+
+  // 관계: Job has Reviews (1:N)
+  reviews Review[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -141,4 +150,28 @@ model Photo {
   pet    Pet?    @relation(fields: [pet_id], references: [id])
 
   createdAt DateTime @default(now())
+}
+
+model Review {
+  id          String  @id @default(uuid())
+  rating      Int
+  comment     String?
+
+  // 작성자 (PetOwner 또는 PetSitter)
+  reviewer_id String
+  reviewer    User   @relation("ReviewsGiven", fields: [reviewer_id], references: [id])
+
+  // 대상자 (PetSitter 또는 PetOwner)
+  reviewee_id String
+  reviewee    User   @relation("ReviewsReceived", fields: [reviewee_id], references: [id])
+
+  // 관련 공고
+  job_id String
+  job    Job    @relation(fields: [job_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 공고당 작성자 1인 1리뷰 (양방향 허용: PetOwner + PetSitter 각 1개)
+  @@unique([job_id, reviewer_id])
 }

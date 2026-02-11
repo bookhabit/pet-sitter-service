@@ -23,7 +23,7 @@
 
 ### 2.2 신규 기능 (v2)
 - **사진 업로드**: 프로필/공고/반려동물 사진 업로드
-- **리뷰 및 평점**: 펫시터에 대한 별점(1~5) + 리뷰 텍스트
+- **리뷰 및 평점**: PetOwner ↔ PetSitter 간 양방향 별점(1~5) + 리뷰 텍스트
 - **공고 필드 확장**: 위치정보(주소, 위도, 경도) + 가격(시간당/일당)
 - **채팅 기능**: 공고 등록자와 지원자 간 1:1 채팅
 - **즐겨찾기**: 펫시터가 관심 공고를 저장하고 확인
@@ -42,7 +42,7 @@
 
 #### 3.1.2 신규 모델 식별 (v2)
 - **Photo (사진)**: 사용자/공고/반려동물에 연결되는 사진 파일 메타데이터
-- **Review (리뷰)**: 펫오너가 공고 완료 후 펫시터에게 남기는 평가
+- **Review (리뷰)**: 공고 완료 후 PetOwner ↔ PetSitter 간 양방향으로 작성하는 평가
 - **ChatRoom (채팅방)**: 첫 메시지 전송 시 생성되는 1:1 채팅 공간
 - **Message (메시지)**: 채팅방 내 개별 메시지
 - **Favorite (즐겨찾기)**: 펫시터가 저장한 관심 공고
@@ -105,9 +105,10 @@
 - `id`: 리뷰 고유 식별자
 - `rating`: 별점 (1~5 정수)
 - `comment`: 리뷰 텍스트 (선택)
-- `reviewer_id`: 작성자 ID (PetOwner)
-- `reviewee_id`: 대상자 ID (PetSitter)
-- `job_id`: 해당 공고 ID (공고당 리뷰 1개 제약)
+- `reviewer_id`: 작성자 ID (PetOwner 또는 PetSitter)
+- `reviewee_id`: 대상자 ID (PetSitter 또는 PetOwner) — 서버에서 자동 결정
+- `job_id`: 관련 공고 ID
+- 제약: `(job_id, reviewer_id)` 조합 유일 — 공고당 작성자 1인 1리뷰 (최대 2개/공고: PetOwner + PetSitter 각 1개)
 
 #### 3.2.7 ChatRoom (채팅방) *(신규 v2)*
 - `id`: 채팅방 고유 식별자
@@ -208,8 +209,9 @@
 - **Approve**: 적절한 지원자가 있다면 승인할 수 있다
 
 #### 5.2.3 Review 모델 관련 *(신규 v2)*
-- **Create**: 공고가 완료되면 펫시터에게 별점(1~5)과 리뷰 텍스트를 남길 수 있다
-  - 조건: 본인 공고 + approved 지원자 존재 + 공고당 1개 제한
+- **Create**: approved된 공고의 펫시터(지원자)에게 별점(1~5)과 리뷰 텍스트를 남길 수 있다
+  - 조건: 본인 공고(`job.creator_user_id === reviewer_id`) + approved 지원자 존재 + 공고당 1개 제한
+  - reviewee는 서버에서 approved JobApplication의 user_id로 자동 결정
 - **Delete**: 본인이 작성한 리뷰를 삭제할 수 있다
 
 #### 5.2.4 Chat 모델 관련 *(신규 v2)*
@@ -240,7 +242,11 @@
 - **View Messages**: 채팅방의 메시지 내역을 확인할 수 있다
 
 #### 5.3.5 Review 모델 관련 *(신규 v2)*
+- **Create**: approved된 공고의 PetOwner에게 별점(1~5)과 리뷰 텍스트를 남길 수 있다
+  - 조건: 본인이 지원하고 approved된 공고 + 공고당 1개 제한
+  - reviewee는 서버에서 job.creator_user_id로 자동 결정
 - **View**: 내가 받은 리뷰와 평점 목록을 확인할 수 있다
+- **Delete**: 본인이 작성한 리뷰를 삭제할 수 있다
 
 ### 5.4 관리자 기능
 
@@ -261,7 +267,7 @@ User (사용자)
   │              ├─ contains → Pet[] (반려동물 목록, 1:N 관계)
   │              │              └─ has → Photo[] (반려동물 사진)
   │              ├─ has → Photo[] (공고 사진)
-  │              ├─ has → Review? (공고당 리뷰 1개)
+  │              ├─ has → Review[] (공고당 최대 2개: PetOwner 1개 + PetSitter 1개)
   │              └─ has → Favorite[] (즐겨찾기 목록)
   ├─ applies → JobApplication (구인공고 지원)
   │              ├─ references → Job (구인공고)
@@ -281,8 +287,8 @@ User (사용자)
 
 | 역할 | 주요 기능 |
 |------|----------|
-| **반려동물 주인** | 구인공고 등록/수정/삭제(위치·가격·사진 포함), 지원자 확인 및 승인, 리뷰 작성/삭제, 채팅, 계정 관리 |
-| **돌봄 도우미** | 필터링/페이징/검색/가격필터 공고 조회, 지원(채팅방 자동 생성), 즐겨찾기, 채팅, 리뷰 수신, 계정 관리 |
+| **반려동물 주인** | 구인공고 등록/수정/삭제(위치·가격·사진 포함), 지원자 확인 및 승인, 리뷰 작성/삭제(PetSitter에게), 채팅, 계정 관리 |
+| **돌봄 도우미** | 필터링/페이징/검색/가격필터 공고 조회, 지원(채팅방 자동 생성), 즐겨찾기, 채팅, 리뷰 작성/삭제(PetOwner에게), 계정 관리 |
 | **관리자** | 모든 사용자 및 구인공고 관리, 계정 관리 |
 
 ---
@@ -296,7 +302,7 @@ User (사용자)
 - `PATCH /users/{id}` - 사용자 수정
 - `DELETE /users/{id}` - 사용자 삭제
 - `POST /users/{id}/avatar` - 프로필 사진 업로드 *(신규 v2)*
-- `GET /users/{userId}/reviews` - 펫시터 리뷰 목록 조회 *(신규 v2)*
+- `GET /users/{userId}/reviews` - 특정 사용자가 받은 리뷰 목록 조회 *(신규 v2)*
 
 ### 8.2 구인공고 관련
 - `POST /jobs` - 구인공고 등록 (위치, 가격, 사진 포함 가능)
@@ -317,7 +323,7 @@ User (사용자)
 - `DELETE /jobs/{id}` - 구인공고 삭제
 - `GET /users/{id}/jobs` - 특정 사용자의 구인공고 목록
 - `POST /jobs/{id}/photos` - 공고 사진 업로드 *(신규 v2)*
-- `POST /jobs/{jobId}/review` - 리뷰 작성 *(신규 v2)*
+- `POST /jobs/{jobId}/reviews` - 리뷰 작성 (PetOwner 또는 PetSitter) *(신규 v2)*
 
 ### 8.3 지원 관련
 - `POST /jobs/{id}/job-applications` - 구인공고 지원 (채팅방 자동 생성)
@@ -330,8 +336,12 @@ User (사용자)
 - `POST /pets/{id}/photo` - 반려동물 사진 업로드 (multipart/form-data, field: file)
 
 ### 8.5 리뷰 *(신규 v2)*
-- `POST /jobs/{jobId}/review` - 리뷰 작성 (PetOwner만, body: { rating, comment })
-- `GET /users/{userId}/reviews` - 특정 펫시터의 리뷰 목록 (query: sort=createdAt:desc|rating:desc)
+- `POST /jobs/{jobId}/reviews` - 리뷰 작성 (PetOwner 또는 PetSitter, body: { rating, comment })
+  - PetOwner: approved PetSitter에게 리뷰 (본인 공고여야 함)
+  - PetSitter: 본인이 approved된 공고의 PetOwner에게 리뷰
+  - reviewee는 서버에서 자동 결정 (클라이언트가 지정 불가)
+  - 공고당 작성자 1인 1리뷰 (최대 2개/공고)
+- `GET /users/{userId}/reviews` - 특정 사용자가 받은 리뷰 목록 (query: sort=createdAt:desc|createdAt:asc|rating:desc|rating:asc)
 - `DELETE /reviews/{id}` - 리뷰 삭제 (작성자만)
 
 ### 8.6 채팅 *(신규 v2)*
@@ -382,9 +392,12 @@ User (사용자)
 #### 9.3.2 리뷰 및 평점
 - 별점: 1~5 정수
 - 리뷰 텍스트: 선택 사항
-- 리뷰 정렬: 최근순 / 높은평점순
-- 작성 조건: 본인 공고 + approved 지원자 존재 + 공고당 1개 제한
-- 평점 기반 정렬, 추천 도우미 기능 구현 가능
+- 리뷰 방향: **양방향** — PetOwner→PetSitter, PetSitter→PetOwner
+- 리뷰 정렬: 최근순 / 오래된순 / 높은평점순 / 낮은평점순
+- PetOwner 작성 조건: 본인 공고 + approved 지원자 존재 + 공고당 1개 제한
+- PetSitter 작성 조건: 본인이 approved된 공고 + 공고당 1개 제한
+- reviewee는 서버에서 자동 결정 (클라이언트가 지정 불가, 보안)
+- DB 유니크 제약: `@@unique([job_id, reviewer_id])`
 
 #### 9.3.3 공고 필드 확장
 - 위치 정보: 주소(텍스트), 위도, 경도 (모두 선택 사항)
@@ -430,5 +443,5 @@ User (사용자)
 
 ---
 
-**문서 버전**: 3.0
-**최종 수정일**: 2026-02-10
+**문서 버전**: 3.1
+**최종 수정일**: 2026-02-11

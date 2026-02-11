@@ -13,7 +13,8 @@
 5. [인증 시스템](#인증-시스템)
 6. [테스트 방법](#테스트-방법)
 7. [실전 예시](#실전-예시)
-8. [사진 업로드](./PHOTO_UPLOAD.md#graphql-api)
+8. [리뷰 기능 테스트](#리뷰-작성--petowner--petsitter-job5-시나리오)
+9. [사진 업로드](./PHOTO_UPLOAD.md#graphql-api)
 
 ---
 
@@ -1572,6 +1573,358 @@ query GetApprovedApplications {
 
 ---
 
+### 26. 리뷰 작성 — PetOwner → PetSitter (job5 시나리오)
+
+> **사전 조건**: seed 데이터 기준, job5는 `both(양면인)`가 등록하고 `sitter1(박돌봄)`이 approved.
+> 두 계정 모두 아직 리뷰 미작성 상태.
+
+**HTTP Headers:**
+```json
+{
+  "Authorization": "Bearer <BOTH_JWT_TOKEN>"
+}
+```
+
+**Step 1 — `both` 계정으로 로그인:**
+```graphql
+mutation LoginBoth {
+  login(data: {
+    email: "both@test.com"
+    password: "password123"
+  }) {
+    user_id
+    auth_header
+  }
+}
+```
+
+**Step 2 — job5 ID 조회 (activity로 찾기):**
+```graphql
+query FindJob5 {
+  jobs(filter: { activity: "소형견" }) {
+    items {
+      id
+      activity
+      creator_user_id
+    }
+  }
+}
+```
+
+**Step 3 — 리뷰 작성:**
+```graphql
+mutation CreateReviewAsOwner {
+  createReview(
+    jobId: "<JOB5_ID>"
+    data: {
+      rating: 5
+      comment: "매우 친절하고 꼼꼼하게 돌봐주셨어요!"
+    }
+  ) {
+    id
+    rating
+    comment
+    reviewer_id
+    reviewee_id
+    job_id
+    createdAt
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "createReview": {
+      "id": "review-uuid",
+      "rating": 5,
+      "comment": "매우 친절하고 꼼꼼하게 돌봐주셨어요!",
+      "reviewer_id": "<BOTH_USER_ID>",
+      "reviewee_id": "<SITTER1_USER_ID>",
+      "job_id": "<JOB5_ID>",
+      "createdAt": "2026-02-11T..."
+    }
+  }
+}
+```
+
+---
+
+### 27. 리뷰 작성 — PetSitter → PetOwner (job3 시나리오)
+
+> **사전 조건**: seed 데이터 기준, job3은 `owner2(이주인)`가 등록하고 `sitter2(최돌봄)`이 approved.
+> `owner2`는 이미 리뷰 작성 완료, `sitter2`는 미작성.
+
+**HTTP Headers:**
+```json
+{
+  "Authorization": "Bearer <SITTER2_JWT_TOKEN>"
+}
+```
+
+**Step 1 — `sitter2` 계정으로 로그인:**
+```graphql
+mutation LoginSitter2 {
+  login(data: {
+    email: "sitter2@test.com"
+    password: "password123"
+  }) {
+    user_id
+    auth_header
+  }
+}
+```
+
+**Step 2 — job3 ID 조회:**
+```graphql
+query FindJob3 {
+  jobs(filter: { activity: "허스키" }) {
+    items {
+      id
+      activity
+      creator_user_id
+    }
+  }
+}
+```
+
+**Step 3 — 리뷰 작성 (PetSitter 입장):**
+```graphql
+mutation CreateReviewAsSitter {
+  createReview(
+    jobId: "<JOB3_ID>"
+    data: {
+      rating: 4
+      comment: "반려동물이 잘 훈련되어 있고 주인분도 친절하셨어요."
+    }
+  ) {
+    id
+    rating
+    comment
+    reviewer_id
+    reviewee_id
+    job_id
+    createdAt
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "createReview": {
+      "id": "review-uuid",
+      "rating": 4,
+      "comment": "반려동물이 잘 훈련되어 있고 주인분도 친절하셨어요.",
+      "reviewer_id": "<SITTER2_USER_ID>",
+      "reviewee_id": "<OWNER2_USER_ID>",
+      "job_id": "<JOB3_ID>",
+      "createdAt": "2026-02-11T..."
+    }
+  }
+}
+```
+
+---
+
+### 28. 특정 사용자가 받은 리뷰 목록 조회
+
+```graphql
+# sitter1이 받은 리뷰 목록 (최신순)
+query GetSitter1Reviews {
+  userReviews(
+    userId: "<SITTER1_USER_ID>"
+    sort: "createdAt:desc"
+  ) {
+    id
+    rating
+    comment
+    reviewer_id
+    reviewee_id
+    job_id
+    createdAt
+  }
+}
+```
+
+```graphql
+# 높은 평점순 정렬
+query GetReviewsByRating {
+  userReviews(
+    userId: "<SITTER1_USER_ID>"
+    sort: "rating:desc"
+  ) {
+    id
+    rating
+    comment
+    createdAt
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "userReviews": [
+      {
+        "id": "review-uuid-1",
+        "rating": 5,
+        "comment": "매우 친절하고 꼼꼼하게 돌봐주셨어요. 다음에도 꼭 부탁드리겠습니다!",
+        "reviewer_id": "<OWNER1_USER_ID>",
+        "reviewee_id": "<SITTER1_USER_ID>",
+        "job_id": "<JOB2_ID>",
+        "createdAt": "..."
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 29. 리뷰 삭제
+
+```graphql
+# 리뷰 작성자만 삭제 가능
+mutation DeleteReview {
+  deleteReview(id: "<REVIEW_ID>")
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "deleteReview": true
+  }
+}
+```
+
+---
+
+### 30. 리뷰 에러 케이스 테스트
+
+#### 케이스 1: 승인된 지원자 없는 공고에 리뷰 시도 → 400
+
+> job1: sitter1, sitter2 모두 applying 상태 (approved 없음)
+
+```graphql
+# owner1 토큰으로 실행
+mutation ReviewJobWithNoApproved {
+  createReview(
+    jobId: "<JOB1_ID>"
+    data: { rating: 3 }
+  ) {
+    id
+  }
+}
+```
+
+**예상 응답 (에러):**
+```json
+{
+  "errors": [
+    {
+      "message": "승인된 지원자가 없어 리뷰를 작성할 수 없습니다.",
+      "extensions": { "code": "BAD_USER_INPUT" }
+    }
+  ],
+  "data": null
+}
+```
+
+#### 케이스 2: 관계없는 사용자가 리뷰 시도 → 403
+
+> job5는 both와 sitter1만 리뷰 가능. owner2는 권한 없음.
+
+```graphql
+# owner2 토큰으로 실행
+mutation UnauthorizedReview {
+  createReview(
+    jobId: "<JOB5_ID>"
+    data: { rating: 3 }
+  ) {
+    id
+  }
+}
+```
+
+**예상 응답 (에러):**
+```json
+{
+  "errors": [
+    {
+      "message": "해당 공고에 대한 리뷰 작성 권한이 없습니다.",
+      "extensions": { "code": "FORBIDDEN" }
+    }
+  ],
+  "data": null
+}
+```
+
+#### 케이스 3: 이미 리뷰를 작성한 경우 → 409
+
+> job2: owner1 → sitter1 리뷰 이미 완료 (seed 데이터)
+
+```graphql
+# owner1 토큰으로 실행
+mutation DuplicateReview {
+  createReview(
+    jobId: "<JOB2_ID>"
+    data: { rating: 5, comment: "중복 작성 시도" }
+  ) {
+    id
+  }
+}
+```
+
+**예상 응답 (에러):**
+```json
+{
+  "errors": [
+    {
+      "message": "이미 해당 공고에 리뷰를 작성했습니다.",
+      "extensions": { "code": "CONFLICT" }
+    }
+  ],
+  "data": null
+}
+```
+
+#### 케이스 4: rating 범위 초과 → 400
+
+```graphql
+mutation InvalidRating {
+  createReview(
+    jobId: "<JOB5_ID>"
+    data: { rating: 6 }
+  ) {
+    id
+  }
+}
+```
+
+**예상 응답 (에러):**
+```json
+{
+  "errors": [
+    {
+      "message": "Bad Request Exception",
+      "extensions": {
+        "code": "BAD_USER_INPUT",
+        "validationErrors": ["rating must not be greater than 5"]
+      }
+    }
+  ],
+  "data": null
+}
+```
+
+---
+
 ## 💡 실전 예시
 
 ### 복잡한 Query 예시 (Field Resolver 사용)
@@ -1759,5 +2112,5 @@ npx prisma generate
 
 ---
 
-**문서 버전**: 1.0
-**최종 수정일**: 2026-02-09
+**문서 버전**: 1.1
+**최종 수정일**: 2026-02-11

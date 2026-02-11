@@ -11,6 +11,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
 import { JobsModule } from './jobs/jobs.module';
 import { JobApplicationModule } from './job-application/job-application.module';
 import { PhotosModule } from './photos/photos.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 
@@ -22,6 +23,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
     JobsModule,
     JobApplicationModule,
     PhotosModule,
+    ReviewsModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),

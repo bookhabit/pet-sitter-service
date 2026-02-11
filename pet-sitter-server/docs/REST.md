@@ -12,8 +12,9 @@
 4. [데이터 흐름](#데이터-흐름)
 5. [인증 시스템](#인증-시스템)
 6. [테스트 방법](#테스트-방법)
-7. [OpenAPI(Swagger) 문서](#openapi-문서)
-8. [사진 업로드](./PHOTO_UPLOAD.md#rest-api)
+7. [리뷰 기능 테스트](#리뷰-작성--petowner--petsitter-job5-시나리오)
+8. [OpenAPI(Swagger) 문서](#openapi-문서)
+9. [사진 업로드](./PHOTO_UPLOAD.md#rest-api)
 
 ---
 
@@ -741,6 +742,238 @@ curl -X GET http://localhost:3000/users/d290f1ee-6c54-4b01-90e6-d701748f0851 \
 
 ---
 
+### 9. 리뷰 작성 — PetOwner → PetSitter (job5 시나리오)
+
+> **사전 조건**: seed 데이터 기준, job5는 `both(양면인)`가 등록하고 `sitter1(박돌봄)`이 approved 상태.
+> 두 계정 모두 아직 리뷰를 작성하지 않은 상태.
+
+**Step 1 — `both` 계정으로 로그인:**
+
+```bash
+curl -X POST http://localhost:3000/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"email": "both@test.com", "password": "password123"}'
+```
+
+응답에서 `auth_header` 값을 복사하세요.
+
+**Step 2 — job5의 ID 조회 (공고 목록에서 확인):**
+
+```bash
+curl -X GET http://localhost:3000/jobs \
+  -H "Authorization: Bearer <BOTH_TOKEN>"
+```
+
+activity가 "소형견 산책 도우미 구합니다"인 공고의 ID를 복사하세요.
+
+**Step 3 — 리뷰 작성 (PetOwner 입장):**
+
+```bash
+# <JOB5_ID>를 실제 job5 ID로 교체
+curl -X POST http://localhost:3000/jobs/<JOB5_ID>/reviews \
+  -H "Authorization: Bearer <BOTH_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"rating": 5, "comment": "매우 친절하고 꼼꼼하게 돌봐주셨어요!"}'
+```
+
+**예상 응답 (201 Created):**
+```json
+{
+  "id": "review-uuid",
+  "rating": 5,
+  "comment": "매우 친절하고 꼼꼼하게 돌봐주셨어요!",
+  "reviewer_id": "<BOTH_USER_ID>",
+  "reviewee_id": "<SITTER1_USER_ID>",
+  "job_id": "<JOB5_ID>",
+  "createdAt": "2026-02-11T...",
+  "updatedAt": "2026-02-11T..."
+}
+```
+
+---
+
+### 10. 리뷰 작성 — PetSitter → PetOwner (job3 시나리오)
+
+> **사전 조건**: seed 데이터 기준, job3은 `owner2(이주인)`가 등록하고 `sitter2(최돌봄)`이 approved.
+> `owner2`는 이미 리뷰를 작성했고, `sitter2`는 아직 미작성.
+
+**Step 1 — `sitter2` 계정으로 로그인:**
+
+```bash
+curl -X POST http://localhost:3000/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"email": "sitter2@test.com", "password": "password123"}'
+```
+
+**Step 2 — job3의 ID 조회:**
+
+```bash
+curl -X GET http://localhost:3000/jobs \
+  -H "Authorization: Bearer <SITTER2_TOKEN>"
+```
+
+activity가 "허스키 산책 도우미 구합니다"인 공고의 ID를 복사하세요.
+
+**Step 3 — 리뷰 작성 (PetSitter 입장):**
+
+```bash
+curl -X POST http://localhost:3000/jobs/<JOB3_ID>/reviews \
+  -H "Authorization: Bearer <SITTER2_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"rating": 4, "comment": "반려동물이 잘 훈련되어 있고 주인분도 친절하셨어요."}'
+```
+
+**예상 응답 (201 Created):**
+```json
+{
+  "id": "review-uuid",
+  "rating": 4,
+  "comment": "반려동물이 잘 훈련되어 있고 주인분도 친절하셨어요.",
+  "reviewer_id": "<SITTER2_USER_ID>",
+  "reviewee_id": "<OWNER2_USER_ID>",
+  "job_id": "<JOB3_ID>",
+  "createdAt": "2026-02-11T...",
+  "updatedAt": "2026-02-11T..."
+}
+```
+
+---
+
+### 11. 특정 사용자가 받은 리뷰 목록 조회
+
+**Endpoint:** `GET /users/:userId/reviews`
+
+```bash
+# sitter1이 받은 리뷰 목록 조회
+curl -X GET http://localhost:3000/users/<SITTER1_USER_ID>/reviews \
+  -H "Authorization: Bearer <ANY_TOKEN>"
+
+# 최신순 정렬
+curl -X GET "http://localhost:3000/users/<SITTER1_USER_ID>/reviews?sort=createdAt:desc" \
+  -H "Authorization: Bearer <ANY_TOKEN>"
+
+# 높은 평점순 정렬
+curl -X GET "http://localhost:3000/users/<SITTER1_USER_ID>/reviews?sort=rating:desc" \
+  -H "Authorization: Bearer <ANY_TOKEN>"
+```
+
+**예상 응답 (200 OK):**
+```json
+[
+  {
+    "id": "review-uuid-1",
+    "rating": 5,
+    "comment": "매우 친절하고 꼼꼼하게 돌봐주셨어요. 다음에도 꼭 부탁드리겠습니다!",
+    "reviewer_id": "<OWNER1_USER_ID>",
+    "reviewee_id": "<SITTER1_USER_ID>",
+    "job_id": "<JOB2_ID>",
+    "createdAt": "...",
+    "updatedAt": "..."
+  }
+]
+```
+
+---
+
+### 12. 리뷰 삭제
+
+**Endpoint:** `DELETE /reviews/:id`
+
+```bash
+# 리뷰 작성자만 삭제 가능
+curl -X DELETE http://localhost:3000/reviews/<REVIEW_ID> \
+  -H "Authorization: Bearer <REVIEWER_TOKEN>"
+```
+
+**예상 응답 (204 No Content):** 본문 없음
+
+---
+
+### 13. 리뷰 에러 케이스 테스트
+
+#### 케이스 1: 승인된 지원자 없는 공고에 리뷰 시도 → 400
+
+> job1: sitter1, sitter2 모두 applying 상태 (approved 없음)
+
+```bash
+# owner1으로 로그인 후 job1에 리뷰 시도
+curl -X POST http://localhost:3000/jobs/<JOB1_ID>/reviews \
+  -H "Authorization: Bearer <OWNER1_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"rating": 3}'
+```
+
+**예상 응답 (400 Bad Request):**
+```json
+{
+  "statusCode": 400,
+  "message": "승인된 지원자가 없어 리뷰를 작성할 수 없습니다.",
+  "error": "Bad Request"
+}
+```
+
+#### 케이스 2: 관계없는 사용자가 리뷰 시도 → 403
+
+> job5는 both와 sitter1만 리뷰 가능. owner2는 권한 없음.
+
+```bash
+# owner2 토큰으로 job5에 리뷰 시도
+curl -X POST http://localhost:3000/jobs/<JOB5_ID>/reviews \
+  -H "Authorization: Bearer <OWNER2_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"rating": 3}'
+```
+
+**예상 응답 (403 Forbidden):**
+```json
+{
+  "statusCode": 403,
+  "message": "해당 공고에 대한 리뷰 작성 권한이 없습니다.",
+  "error": "Forbidden"
+}
+```
+
+#### 케이스 3: 이미 리뷰를 작성한 경우 → 409
+
+> job2: owner1 → sitter1 이미 리뷰 완료 (seed 데이터)
+
+```bash
+# owner1 토큰으로 job2에 중복 리뷰 시도
+curl -X POST http://localhost:3000/jobs/<JOB2_ID>/reviews \
+  -H "Authorization: Bearer <OWNER1_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"rating": 5, "comment": "또 작성 시도"}'
+```
+
+**예상 응답 (409 Conflict):**
+```json
+{
+  "statusCode": 409,
+  "message": "이미 해당 공고에 리뷰를 작성했습니다.",
+  "error": "Conflict"
+}
+```
+
+#### 케이스 4: rating 범위 초과 → 400
+
+```bash
+curl -X POST http://localhost:3000/jobs/<JOB5_ID>/reviews \
+  -H "Authorization: Bearer <BOTH_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"rating": 6}'
+```
+
+**예상 응답 (400 Bad Request):**
+```json
+{
+  "statusCode": 400,
+  "message": ["rating must not be greater than 5"],
+  "error": "Bad Request"
+}
+```
+
+---
+
 ## 📚 OpenAPI (Swagger) 문서
 
 ### 1. Swagger UI 접속
@@ -961,5 +1194,5 @@ app.enableCors({
 
 ---
 
-**문서 버전**: 1.0
-**최종 수정일**: 2026-02-09
+**문서 버전**: 1.1
+**최종 수정일**: 2026-02-11

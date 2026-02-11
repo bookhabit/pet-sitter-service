@@ -23,14 +23,14 @@ export class PhotoModel {
   @Field()
   uploader_id: string;
 
-  @Field({ nullable: true })
-  user_id?: string;
+  @Field(() => String, { nullable: true })
+  user_id: string | null;
 
-  @Field({ nullable: true })
-  job_id?: string;
+  @Field(() => String, { nullable: true })
+  job_id: string | null;
 
-  @Field({ nullable: true })
-  pet_id?: string;
+  @Field(() => String, { nullable: true })
+  pet_id: string | null;
 
   @Field()
   createdAt: Date;

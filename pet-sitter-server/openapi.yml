@@ -9,6 +9,8 @@ tags:
     description: Job-related operations
   - name: Photos
     description: Photo upload and management
+  - name: Reviews
+    description: Review and rating operations
 paths:
   /users:
     post:
@@ -576,6 +578,128 @@ paths:
                 password:
                   type: string
       security: []
+  /jobs/{jobId}/reviews:
+    parameters:
+      - schema:
+          type: string
+        name: jobId
+        in: path
+        required: true
+    post:
+      tags:
+      - Reviews
+      summary: Create Review
+      description: |
+        PetOwner 또는 PetSitter가 리뷰를 작성합니다.
+        - PetOwner: 본인 공고의 approved PetSitter에게 리뷰 작성
+        - PetSitter: 본인이 approved된 공고의 PetOwner에게 리뷰 작성
+        공고당 작성자 1인 1리뷰 (양방향 허용: 최대 2개/공고)
+      operationId: createReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          description: No approved applicant exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+        '403':
+          description: Not authorized to review this job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+        '409':
+          description: Review already exists for this job by this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+  /users/{userId}/reviews:
+    parameters:
+      - schema:
+          type: string
+        name: userId
+        in: path
+        required: true
+    get:
+      tags:
+      - Reviews
+      summary: List Reviews For User
+      description: 특정 사용자가 받은 리뷰 목록을 조회합니다.
+      operationId: listReviewsForUser
+      parameters:
+        - name: sort
+          in: query
+          description: |
+            정렬 기준. 유효 값: createdAt:desc (기본), createdAt:asc, rating:desc, rating:asc
+          schema:
+            type: string
+            enum:
+              - createdAt:desc
+              - createdAt:asc
+              - rating:desc
+              - rating:asc
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+  /reviews/{id}:
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    delete:
+      tags:
+      - Reviews
+      summary: Delete Review
+      description: 리뷰 작성자만 삭제할 수 있습니다.
+      operationId: deleteReview
+      responses:
+        '204':
+          description: No Content
+        '403':
+          description: Not the reviewer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+        '404':
+          description: Review not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
 components:
   schemas:
     User:
@@ -918,6 +1042,62 @@ components:
         - size
         - uploader_id
         - createdAt
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: 별점 (1~5)
+        comment:
+          type: string
+          nullable: true
+          description: 리뷰 텍스트 (선택)
+        reviewer_id:
+          type: string
+          readOnly: true
+          description: 작성자 ID (PetOwner 또는 PetSitter)
+        reviewee_id:
+          type: string
+          readOnly: true
+          description: 대상자 ID (PetSitter 또는 PetOwner)
+        job_id:
+          type: string
+          readOnly: true
+          description: 관련 공고 ID
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - id
+        - rating
+        - reviewer_id
+        - reviewee_id
+        - job_id
+        - createdAt
+        - updatedAt
+    CreateReviewRequest:
+      type: object
+      required:
+        - rating
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: 별점 (1~5)
+        comment:
+          type: string
+          description: 리뷰 텍스트 (선택)
     OASError:
       type: object
       properties:

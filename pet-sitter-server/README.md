@@ -378,6 +378,26 @@ docker run --name neststudy-postgres \
   -d postgres:17
 ```
 
+### Docker container 내부 postgresQL 데이터베이스 접속
+방법 1️⃣ 
+
+컨테이너 밖에서 바로:
+docker exec -it neststudy-postgres psql -U ckeh0827 -d nestStudy
+
+비밀번호 물으면:
+ho0827
+
+
+정상 접속 시 프롬프트:
+nestStudy=#
+
+
+방법 2️⃣ (컨테이너 안에서)
+docker exec -it neststudy-postgres bash
+
+그 다음:
+psql -U ckeh0827 -d nestStudy
+
 **환경 변수 설명:**
 
 | 변수명 | 설명 | 예시 값 |
