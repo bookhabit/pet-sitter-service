@@ -11,6 +11,8 @@ tags:
     description: Photo upload and management
   - name: Reviews
     description: Review and rating operations
+  - name: Favorites
+    description: Favorites (bookmark) operations for PetSitters
 paths:
   /users:
     post:
@@ -184,6 +186,18 @@ paths:
           Valid fields: start_time, end_time
         schema:
           type: string
+      - name: min_price
+        in: query
+        description: Return only jobs with price >= this value.
+        schema:
+          type: integer
+          minimum: 0
+      - name: max_price
+        in: query
+        description: Return only jobs with price <= this value.
+        schema:
+          type: integer
+          minimum: 0
       responses:
         '200':
           description: OK
@@ -554,6 +568,71 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OASError'
+  /favorites:
+    post:
+      tags:
+      - Favorites
+      summary: Toggle Favorite
+      description: |
+        즐겨찾기 토글. 이미 등록되어 있으면 제거, 없으면 추가합니다. (PetSitter 전용)
+      operationId: toggleFavorite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleFavoriteRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToggleFavoriteResult'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
+    get:
+      tags:
+      - Favorites
+      summary: List My Favorites
+      description: 내 즐겨찾기 공고 목록을 조회합니다. (PetSitter 전용)
+      operationId: listMyFavorites
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Job'
+  /favorites/{jobId}:
+    parameters:
+      - schema:
+          type: string
+        name: jobId
+        in: path
+        required: true
+        description: 즐겨찾기에서 제거할 공고 ID
+    delete:
+      tags:
+      - Favorites
+      summary: Remove Favorite
+      description: 즐겨찾기에서 특정 공고를 제거합니다. (PetSitter 전용)
+      operationId: removeFavorite
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Favorite not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OASError'
   /sessions:
     post:
       tags:
@@ -818,6 +897,30 @@ components:
           maxItems: 10
           items:
             $ref: '#/components/schemas/Pet'
+        address:
+          type: string
+          nullable: true
+          description: 공고 위치 주소 (예: 서울 강남구 역삼동)
+        latitude:
+          type: number
+          format: float
+          nullable: true
+          description: 위도 (WGS84)
+        longitude:
+          type: number
+          format: float
+          nullable: true
+          description: 경도 (WGS84)
+        price:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: 가격 (원 단위)
+        price_type:
+          type: string
+          nullable: true
+          enum: [hourly, daily]
+          description: 가격 단위 (시간당 / 일당)
         photos:
           type: array
           readOnly: true
@@ -854,6 +957,25 @@ components:
           maxItems: 10
           items:
             $ref: '#/components/schemas/CreatePetRequest'
+        address:
+          type: string
+          description: 공고 위치 주소 (선택)
+        latitude:
+          type: number
+          format: float
+          description: 위도 (선택)
+        longitude:
+          type: number
+          format: float
+          description: 경도 (선택)
+        price:
+          type: integer
+          minimum: 0
+          description: 가격 원 단위 (선택)
+        price_type:
+          type: string
+          enum: [hourly, daily]
+          description: 가격 단위 - hourly(시간당) / daily(일당) (선택)
         photo_ids:
           type: array
           items:
@@ -879,6 +1001,25 @@ components:
           maxItems: 10
           items:
             $ref: '#/components/schemas/CreatePetRequest'
+        address:
+          type: string
+          description: 공고 위치 주소 (선택)
+        latitude:
+          type: number
+          format: float
+          description: 위도 (선택)
+        longitude:
+          type: number
+          format: float
+          description: 경도 (선택)
+        price:
+          type: integer
+          minimum: 0
+          description: 가격 원 단위 (선택)
+        price_type:
+          type: string
+          enum: [hourly, daily]
+          description: 가격 단위 - hourly(시간당) / daily(일당) (선택)
     Pet:
       type: object
       properties:
@@ -1098,6 +1239,44 @@ components:
         comment:
           type: string
           description: 리뷰 텍스트 (선택)
+    ToggleFavoriteRequest:
+      type: object
+      required:
+        - job_id
+      properties:
+        job_id:
+          type: string
+          format: uuid
+          description: 즐겨찾기에 추가/제거할 공고 ID
+    ToggleFavoriteResult:
+      type: object
+      properties:
+        added:
+          type: boolean
+          description: true이면 즐겨찾기 추가, false이면 즐겨찾기 제거됨
+      required:
+        - added
+    Favorite:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        user_id:
+          type: string
+          readOnly: true
+        job_id:
+          type: string
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - id
+        - user_id
+        - job_id
+        - createdAt
     OASError:
       type: object
       properties:

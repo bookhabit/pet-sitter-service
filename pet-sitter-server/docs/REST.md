@@ -13,8 +13,10 @@
 5. [인증 시스템](#인증-시스템)
 6. [테스트 방법](#테스트-방법)
 7. [리뷰 기능 테스트](#리뷰-작성--petowner--petsitter-job5-시나리오)
-8. [OpenAPI(Swagger) 문서](#openapi-문서)
-9. [사진 업로드](./PHOTO_UPLOAD.md#rest-api)
+8. [위치·가격 정보 테스트](#위치가격-정보-포함-공고-등록-location--price)
+9. [즐겨찾기 테스트](#즐겨찾기-토글-favorites--sitter1-시나리오)
+10. [OpenAPI(Swagger) 문서](#openapi-문서)
+11. [사진 업로드](./PHOTO_UPLOAD.md#rest-api)
 
 ---
 
@@ -974,6 +976,243 @@ curl -X POST http://localhost:3000/jobs/<JOB5_ID>/reviews \
 
 ---
 
+---
+
+### 14. 위치·가격 정보 포함 공고 등록 (Location + Price)
+
+> **사전 조건**: seed 실행 후 PetOwner 계정(owner1 또는 owner2)으로 로그인
+
+**Step 1 — `owner1` 계정으로 로그인:**
+
+```bash
+curl -X POST http://localhost:3000/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"email": "owner1@test.com", "password": "password123"}'
+```
+
+**Step 2 — 위치·가격 정보 포함 공고 등록:**
+
+```bash
+curl -X POST http://localhost:3000/jobs \
+  -H "Authorization: Bearer <OWNER1_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_time": "2026-03-01T09:00:00Z",
+    "end_time": "2026-03-01T11:00:00Z",
+    "activity": "말티즈 홈케어 서비스 구합니다",
+    "address": "서울 종로구 혜화동",
+    "latitude": 37.5826,
+    "longitude": 127.0016,
+    "price": 18000,
+    "price_type": "hourly",
+    "pets": [
+      {
+        "name": "콩이",
+        "age": 2,
+        "species": "Dog",
+        "breed": "말티즈",
+        "size": "SMALL"
+      }
+    ]
+  }'
+```
+
+**예상 응답 (201 Created):**
+```json
+{
+  "id": "new-job-uuid",
+  "creator_user_id": "<OWNER1_USER_ID>",
+  "start_time": "2026-03-01T09:00:00.000Z",
+  "end_time": "2026-03-01T11:00:00.000Z",
+  "activity": "말티즈 홈케어 서비스 구합니다",
+  "address": "서울 종로구 혜화동",
+  "latitude": 37.5826,
+  "longitude": 127.0016,
+  "price": 18000,
+  "price_type": "hourly",
+  "pets": [...]
+}
+```
+
+---
+
+### 15. 가격 범위 필터로 공고 검색
+
+> seed 데이터 기준: job1(15000원/시간), job2(50000원/일), job3(20000원/시간), job4(가격 없음), job5(12000원/시간)
+
+**min_price 필터:**
+
+```bash
+# 가격이 20000원 이상인 공고 조회
+curl -X GET "http://localhost:3000/jobs?min_price=20000" \
+  -H "Authorization: Bearer <ANY_TOKEN>"
+```
+
+**예상 응답**: job2(50000), job3(20000) 포함
+
+**max_price 필터:**
+
+```bash
+# 가격이 15000원 이하인 공고 조회
+curl -X GET "http://localhost:3000/jobs?max_price=15000" \
+  -H "Authorization: Bearer <ANY_TOKEN>"
+```
+
+**예상 응답**: job1(15000), job5(12000) 포함
+
+**범위 필터 조합:**
+
+```bash
+# 12000~20000원 구간 공고 조회
+curl -X GET "http://localhost:3000/jobs?min_price=12000&max_price=20000" \
+  -H "Authorization: Bearer <ANY_TOKEN>"
+```
+
+**예상 응답**: job1(15000), job3(20000), job5(12000) 포함
+
+---
+
+### 16. 즐겨찾기 토글 (Favorites) — sitter1 시나리오
+
+> **사전 조건**: seed 데이터에 sitter1 → job3, job4가 즐겨찾기 된 상태.
+
+**Step 1 — `sitter1` 계정으로 로그인:**
+
+```bash
+curl -X POST http://localhost:3000/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"email": "sitter1@test.com", "password": "password123"}'
+```
+
+**Step 2 — 즐겨찾기 추가 (토글: 없으면 추가):**
+
+```bash
+# job1을 즐겨찾기에 추가
+curl -X POST http://localhost:3000/favorites \
+  -H "Authorization: Bearer <SITTER1_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"job_id": "<JOB1_ID>"}'
+```
+
+**예상 응답 (200 OK):**
+```json
+{ "added": true }
+```
+
+**Step 3 — 같은 요청 재실행 (토글: 있으면 제거):**
+
+```bash
+curl -X POST http://localhost:3000/favorites \
+  -H "Authorization: Bearer <SITTER1_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"job_id": "<JOB1_ID>"}'
+```
+
+**예상 응답 (200 OK):**
+```json
+{ "added": false }
+```
+
+---
+
+### 17. 즐겨찾기 목록 조회
+
+```bash
+curl -X GET http://localhost:3000/favorites \
+  -H "Authorization: Bearer <SITTER1_TOKEN>"
+```
+
+**예상 응답 (200 OK):** seed 기준 sitter1의 즐겨찾기: job3, job4
+```json
+[
+  {
+    "id": "<JOB4_ID>",
+    "activity": "진돗개 돌봄 서비스 구합니다",
+    "address": null,
+    "price": null,
+    ...
+  },
+  {
+    "id": "<JOB3_ID>",
+    "activity": "허스키 산책 도우미 구합니다",
+    "address": "부산 해운대구 우동",
+    "price": 20000,
+    "price_type": "hourly",
+    ...
+  }
+]
+```
+
+---
+
+### 18. 즐겨찾기 직접 제거 (DELETE)
+
+```bash
+# sitter1의 job3 즐겨찾기 제거
+curl -X DELETE "http://localhost:3000/favorites/<JOB3_ID>" \
+  -H "Authorization: Bearer <SITTER1_TOKEN>"
+```
+
+**예상 응답 (204 No Content):** 본문 없음
+
+---
+
+### 19. 즐겨찾기 에러 케이스 테스트
+
+#### 케이스 1: PetOwner 계정으로 즐겨찾기 시도 → 403
+
+```bash
+curl -X POST http://localhost:3000/favorites \
+  -H "Authorization: Bearer <OWNER1_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"job_id": "<JOB1_ID>"}'
+```
+
+**예상 응답 (403 Forbidden):**
+```json
+{
+  "statusCode": 403,
+  "message": "Forbidden resource",
+  "error": "Forbidden"
+}
+```
+
+#### 케이스 2: 존재하지 않는 공고 즐겨찾기 시도 → 404
+
+```bash
+curl -X POST http://localhost:3000/favorites \
+  -H "Authorization: Bearer <SITTER1_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"job_id": "00000000-0000-0000-0000-000000000000"}'
+```
+
+**예상 응답 (404 Not Found):**
+```json
+{
+  "statusCode": 404,
+  "message": "Job not found",
+  "error": "Not Found"
+}
+```
+
+#### 케이스 3: 즐겨찾기에 없는 항목 DELETE 시도 → 404
+
+```bash
+curl -X DELETE "http://localhost:3000/favorites/00000000-0000-0000-0000-000000000000" \
+  -H "Authorization: Bearer <SITTER1_TOKEN>"
+```
+
+**예상 응답 (404 Not Found):**
+```json
+{
+  "statusCode": 404,
+  "message": "Favorite not found",
+  "error": "Not Found"
+}
+```
+
+---
+
 ## 📚 OpenAPI (Swagger) 문서
 
 ### 1. Swagger UI 접속
@@ -1053,6 +1292,14 @@ async function bootstrap() {
 | GET | `/jobs/:jobId/job-applications` | 구인공고별 지원 목록 | ✅ | 작성자 |
 | PATCH | `/job-applications/:id` | 지원 상태 수정 (승인/거절) | ✅ | 구인공고 작성자 |
 
+### Favorites (즐겨찾기)
+
+| 메서드 | 엔드포인트 | 설명 | 인증 | 권한 |
+|--------|-----------|------|------|------|
+| POST | `/favorites` | 즐겨찾기 토글 (추가/제거) | ✅ | PetSitter |
+| GET | `/favorites` | 내 즐겨찾기 목록 조회 | ✅ | PetSitter |
+| DELETE | `/favorites/:jobId` | 즐겨찾기 직접 제거 | ✅ | PetSitter |
+
 ---
 
 ## 🔧 Query Parameters (필터링/페이징)
@@ -1071,6 +1318,8 @@ endDate=2026-02-28               # 종료 날짜 필터
 search=강아지                     # 검색어 (활동, 품종 등)
 sortBy=createdAt                 # 정렬 기준
 sortOrder=desc                   # 정렬 순서 (asc/desc)
+min_price=10000                  # 최소 가격 필터 (이상)
+max_price=50000                  # 최대 가격 필터 (이하)
 ```
 
 **요청 예시:**
@@ -1194,5 +1443,5 @@ app.enableCors({
 
 ---
 
-**문서 버전**: 1.1
-**최종 수정일**: 2026-02-11
+**문서 버전**: 1.2
+**최종 수정일**: 2026-02-12

@@ -1,4 +1,4 @@
-import { PrismaClient, Role, PetSpecies, ApproveStatus } from '@prisma/client';
+import { PrismaClient, Role, PetSpecies, ApproveStatus, PriceType } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();
@@ -13,6 +13,7 @@ async function main() {
 
   // 기존 데이터 삭제 (외래키 순서 주의)
   console.log('🗑️  기존 데이터 삭제 중...');
+  await prisma.favorite.deleteMany();
   await prisma.review.deleteMany();
   await prisma.photo.deleteMany();
   await prisma.jobApplication.deleteMany();
@@ -91,6 +92,7 @@ async function main() {
   const now = new Date();
 
   // job1: owner1 소유 | 지원자 있음 (applying 상태) | 리뷰 불가 (approved 없음)
+  // 위치: 서울 강남구 | 시급 15,000원
   const job1 = await prisma.job.create({
     data: {
       id: randomUUID(),
@@ -98,6 +100,11 @@ async function main() {
       start_time: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000),
       end_time: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000),
       activity: '강아지 산책 도우미 구합니다',
+      address: '서울 강남구 역삼동',
+      latitude: 37.5012,
+      longitude: 127.0396,
+      price: 15000,
+      price_type: PriceType.hourly,
       pets: {
         create: [
           { id: randomUUID(), name: '뽀삐', age: 3, species: PetSpecies.Dog, breed: '골든 리트리버', size: '대형' },
@@ -108,7 +115,8 @@ async function main() {
     include: { pets: true },
   });
 
-  // job2: owner1 소유 | sitter1 approved | 양방향 리뷰 모두 완료 (seed에서 미리 생성)
+  // job2: owner1 소유 | sitter1 approved | 양방향 리뷰 모두 완료
+  // 위치: 서울 마포구 | 일당 50,000원
   const job2 = await prisma.job.create({
     data: {
       id: randomUUID(),
@@ -116,6 +124,11 @@ async function main() {
       start_time: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000),
       end_time: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000),
       activity: '고양이 돌봄 서비스 요청합니다',
+      address: '서울 마포구 합정동',
+      latitude: 37.5497,
+      longitude: 126.9134,
+      price: 50000,
+      price_type: PriceType.daily,
       pets: {
         create: [
           { id: randomUUID(), name: '나비', age: 1, species: PetSpecies.Cat, breed: '페르시안', size: '소형' },
@@ -125,7 +138,8 @@ async function main() {
     include: { pets: true },
   });
 
-  // job3: owner2 소유 | sitter2 approved | PetOwner(owner2)만 리뷰 작성 완료 → sitter2 아직 미작성
+  // job3: owner2 소유 | sitter2 approved | PetOwner(owner2)만 리뷰 작성 완료
+  // 위치: 부산 해운대구 | 시급 20,000원
   const job3 = await prisma.job.create({
     data: {
       id: randomUUID(),
@@ -133,6 +147,11 @@ async function main() {
       start_time: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000),
       end_time: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000),
       activity: '허스키 산책 도우미 구합니다',
+      address: '부산 해운대구 우동',
+      latitude: 35.1631,
+      longitude: 129.1635,
+      price: 20000,
+      price_type: PriceType.hourly,
       pets: {
         create: [
           { id: randomUUID(), name: '멍멍이', age: 5, species: PetSpecies.Dog, breed: '시베리안 허스키', size: '대형' },
@@ -142,7 +161,7 @@ async function main() {
     include: { pets: true },
   });
 
-  // job4: owner2 소유 | 지원자 없음 | 리뷰 불가
+  // job4: owner2 소유 | 지원자 없음 | 리뷰 불가 | 위치/가격 없음
   const job4 = await prisma.job.create({
     data: {
       id: randomUUID(),
@@ -161,6 +180,7 @@ async function main() {
   });
 
   // job5: both 소유 | sitter1 approved | 리뷰 미작성 (테스트용)
+  // 위치: 서울 신촌 | 시급 12,000원
   const job5 = await prisma.job.create({
     data: {
       id: randomUUID(),
@@ -168,6 +188,11 @@ async function main() {
       start_time: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
       end_time: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000),
       activity: '소형견 산책 도우미 구합니다',
+      address: '서울 서대문구 신촌동',
+      latitude: 37.5596,
+      longitude: 126.9423,
+      price: 12000,
+      price_type: PriceType.hourly,
       pets: {
         create: [
           { id: randomUUID(), name: '복실이', age: 3, species: PetSpecies.Dog, breed: '푸들', size: '소형' },
@@ -258,6 +283,22 @@ async function main() {
   console.log(`✅ ${reviews.length}개의 리뷰 생성 완료\n`);
 
   // ──────────────────────────────────────────
+  // 5. Favorites 생성
+  // ──────────────────────────────────────────
+  console.log('❤️  Favorites 생성 중...');
+
+  const favorites = await Promise.all([
+    // sitter1: job3(부산 허스키), job4(고양이 돌봄) 즐겨찾기
+    prisma.favorite.create({ data: { id: randomUUID(), user_id: sitter1.id, job_id: job3.id } }),
+    prisma.favorite.create({ data: { id: randomUUID(), user_id: sitter1.id, job_id: job4.id } }),
+    // sitter2: job1(강남 산책), job5(신촌 소형견) 즐겨찾기
+    prisma.favorite.create({ data: { id: randomUUID(), user_id: sitter2.id, job_id: job1.id } }),
+    prisma.favorite.create({ data: { id: randomUUID(), user_id: sitter2.id, job_id: job5.id } }),
+  ]);
+
+  console.log(`✅ ${favorites.length}개의 즐겨찾기 생성 완료\n`);
+
+  // ──────────────────────────────────────────
   // 요약 출력
   // ──────────────────────────────────────────
   console.log('═══════════════════════════════════════════');
@@ -268,6 +309,7 @@ async function main() {
   console.log(`   Pets:            ${jobs.reduce((sum, job) => sum + job.pets.length, 0)}마리`);
   console.log(`   JobApplications: ${applications.length}개`);
   console.log(`   Reviews:         ${reviews.length}개`);
+  console.log(`   Favorites:       ${favorites.length}개`);
   console.log('');
 
   console.log('🔑 테스트 계정 (email / password)');
@@ -298,6 +340,20 @@ async function main() {
   console.log('');
   console.log('   [job1] ★ approved 없음 → 리뷰 불가 (400 Bad Request)');
   console.log('   [job4] ★ 지원자 없음   → 리뷰 불가 (400 Bad Request)');
+  console.log('');
+  console.log('📋 위치/가격 데이터 요약');
+  console.log('───────────────────────────────────────────');
+  console.log('   [job1] 서울 강남구 역삼동 | 15,000원/시간 (hourly)');
+  console.log('   [job2] 서울 마포구 합정동 | 50,000원/일  (daily)');
+  console.log('   [job3] 부산 해운대구 우동 | 20,000원/시간 (hourly)');
+  console.log('   [job4] 위치/가격 없음 (null)');
+  console.log('   [job5] 서울 신촌동       | 12,000원/시간 (hourly)');
+  console.log('');
+  console.log('❤️  즐겨찾기 현황');
+  console.log('───────────────────────────────────────────');
+  console.log('   sitter1(박돌봄): job3(허스키), job4(고양이 돌봄) 즐겨찾기');
+  console.log('   sitter2(최돌봄): job1(강남 산책), job5(신촌 소형견) 즐겨찾기');
+  console.log('   → toggleFavorite 테스트: job3을 sitter1으로 다시 누르면 제거됨');
   console.log('═══════════════════════════════════════════');
   console.log('✅ 테스트 데이터 생성 완료!');
 }

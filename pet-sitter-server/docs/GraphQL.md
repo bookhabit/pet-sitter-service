@@ -12,9 +12,11 @@
 4. [데이터 흐름](#데이터-흐름)
 5. [인증 시스템](#인증-시스템)
 6. [테스트 방법](#테스트-방법)
-7. [실전 예시](#실전-예시)
-8. [리뷰 기능 테스트](#리뷰-작성--petowner--petsitter-job5-시나리오)
-9. [사진 업로드](./PHOTO_UPLOAD.md#graphql-api)
+7. [리뷰 기능 테스트](#리뷰-작성--petowner--petsitter-job5-시나리오)
+8. [위치·가격 정보 테스트](#위치가격-정보-포함-공고-등록-location--price)
+9. [즐겨찾기 테스트](#즐겨찾기-토글-togglefavorite--sitter1-시나리오)
+10. [실전 예시](#실전-예시)
+11. [사진 업로드](./PHOTO_UPLOAD.md#graphql-api)
 
 ---
 
@@ -1925,6 +1927,301 @@ mutation InvalidRating {
 
 ---
 
+### 31. 위치·가격 정보 포함 공고 등록 (Location + Price)
+
+> **사전 조건**: PetOwner 계정(owner1)으로 로그인 후 토큰을 Authorization 헤더에 설정
+
+**HTTP Headers:**
+```json
+{ "Authorization": "Bearer <OWNER1_JWT_TOKEN>" }
+```
+
+```graphql
+mutation CreateJobWithLocation {
+  createJob(data: {
+    start_time: "2026-03-01T09:00:00Z"
+    end_time: "2026-03-01T11:00:00Z"
+    activity: "말티즈 홈케어 서비스 구합니다"
+    address: "서울 종로구 혜화동"
+    latitude: 37.5826
+    longitude: 127.0016
+    price: 18000
+    price_type: hourly
+    pets: [
+      {
+        name: "콩이"
+        age: 2
+        species: Dog
+        breed: "말티즈"
+        size: SMALL
+      }
+    ]
+  }) {
+    id
+    activity
+    address
+    latitude
+    longitude
+    price
+    price_type
+    pets {
+      name
+      species
+    }
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "createJob": {
+      "id": "new-job-uuid",
+      "activity": "말티즈 홈케어 서비스 구합니다",
+      "address": "서울 종로구 혜화동",
+      "latitude": 37.5826,
+      "longitude": 127.0016,
+      "price": 18000,
+      "price_type": "hourly",
+      "pets": [
+        { "name": "콩이", "species": "Dog" }
+      ]
+    }
+  }
+}
+```
+
+---
+
+### 32. 가격 범위 필터로 공고 목록 조회
+
+> seed 데이터 기준: job1(15000원/시간), job2(50000원/일), job3(20000원/시간), job4(가격 없음), job5(12000원/시간)
+
+**min_price 필터 (20000원 이상):**
+
+```graphql
+query JobsMinPrice {
+  jobs(filter: { minPrice: 20000 }) {
+    items {
+      id
+      activity
+      price
+      price_type
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}
+```
+
+**예상 응답**: job2(50000), job3(20000) 포함
+
+**max_price 필터 (15000원 이하):**
+
+```graphql
+query JobsMaxPrice {
+  jobs(filter: { maxPrice: 15000 }) {
+    items {
+      id
+      activity
+      price
+      price_type
+      address
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}
+```
+
+**예상 응답**: job1(15000), job5(12000) 포함
+
+**범위 필터 조합 (12000~20000원):**
+
+```graphql
+query JobsPriceRange {
+  jobs(filter: { minPrice: 12000, maxPrice: 20000 }) {
+    items {
+      id
+      activity
+      price
+      price_type
+    }
+  }
+}
+```
+
+**예상 응답**: job1(15000), job3(20000), job5(12000) 포함
+
+---
+
+### 33. 즐겨찾기 토글 (toggleFavorite) — sitter1 시나리오
+
+> **사전 조건**: seed 데이터에 sitter1 → job3, job4가 즐겨찾기 된 상태. PetSitter 계정으로 로그인.
+
+**HTTP Headers:**
+```json
+{ "Authorization": "Bearer <SITTER1_JWT_TOKEN>" }
+```
+
+**Step 1 — sitter1 로그인:**
+```graphql
+mutation LoginSitter1 {
+  login(data: {
+    email: "sitter1@test.com"
+    password: "password123"
+  }) {
+    user_id
+    auth_header
+  }
+}
+```
+
+**Step 2 — 즐겨찾기 추가 (job1 토글: 없으면 추가):**
+```graphql
+mutation ToggleFavorite {
+  toggleFavorite(jobId: "<JOB1_ID>") {
+    added
+  }
+}
+```
+
+**예상 응답 (추가):**
+```json
+{
+  "data": {
+    "toggleFavorite": {
+      "added": true
+    }
+  }
+}
+```
+
+**Step 3 — 동일 mutation 재실행 (토글: 있으면 제거):**
+
+```json
+{
+  "data": {
+    "toggleFavorite": {
+      "added": false
+    }
+  }
+}
+```
+
+---
+
+### 34. 즐겨찾기 목록 조회 (myFavorites)
+
+**HTTP Headers:**
+```json
+{ "Authorization": "Bearer <SITTER1_JWT_TOKEN>" }
+```
+
+```graphql
+query MyFavorites {
+  myFavorites {
+    id
+    activity
+    address
+    price
+    price_type
+    start_time
+    end_time
+    pets {
+      name
+      species
+      age
+    }
+    photos {
+      url
+    }
+  }
+}
+```
+
+**예상 응답** (seed 기준 sitter1의 즐겨찾기: job4, job3 — 최신 등록순):
+```json
+{
+  "data": {
+    "myFavorites": [
+      {
+        "id": "<JOB4_ID>",
+        "activity": "진돗개 돌봄 서비스 구합니다",
+        "address": null,
+        "price": null,
+        "price_type": null,
+        ...
+      },
+      {
+        "id": "<JOB3_ID>",
+        "activity": "허스키 산책 도우미 구합니다",
+        "address": "부산 해운대구 우동",
+        "price": 20000,
+        "price_type": "hourly",
+        ...
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 35. 즐겨찾기 에러 케이스 테스트
+
+#### 케이스 1: PetOwner 계정으로 toggleFavorite 시도 → 403
+
+```graphql
+# owner1 토큰으로 실행
+mutation ToggleFavoriteAsOwner {
+  toggleFavorite(jobId: "<JOB1_ID>") {
+    added
+  }
+}
+```
+
+**예상 응답 (에러):**
+```json
+{
+  "errors": [
+    {
+      "message": "Forbidden resource",
+      "extensions": { "code": "FORBIDDEN" }
+    }
+  ],
+  "data": null
+}
+```
+
+#### 케이스 2: 존재하지 않는 공고 즐겨찾기 시도 → 404
+
+```graphql
+mutation ToggleFavoriteNotFound {
+  toggleFavorite(jobId: "00000000-0000-0000-0000-000000000000") {
+    added
+  }
+}
+```
+
+**예상 응답 (에러):**
+```json
+{
+  "errors": [
+    {
+      "message": "Job not found",
+      "extensions": { "code": "NOT_FOUND" }
+    }
+  ],
+  "data": null
+}
+```
+
+---
+
 ## 💡 실전 예시
 
 ### 복잡한 Query 예시 (Field Resolver 사용)
@@ -2112,5 +2409,5 @@ npx prisma generate
 
 ---
 
-**문서 버전**: 1.1
-**최종 수정일**: 2026-02-11
+**문서 버전**: 1.2
+**최종 수정일**: 2026-02-12
