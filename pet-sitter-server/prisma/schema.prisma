@@ -45,13 +45,23 @@ enum Role {
 }
 
 
+enum PriceType {
+  hourly
+  daily
+}
+
 model Job {
   id String @id @default(uuid())
   creator_user_id  String
   start_time DateTime
   end_time DateTime
   activity String
-  
+  address    String?
+  latitude   Float?
+  longitude  Float?
+  price      Int?
+  price_type PriceType?
+
   // 관계: Job belongs to User (N:1)
   creator User @relation("JobCreator", fields: [creator_user_id], references: [id])
   

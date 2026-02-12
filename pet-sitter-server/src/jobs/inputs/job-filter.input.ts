@@ -1,6 +1,7 @@
 import { InputType, Field, Int } from '@nestjs/graphql';
 import { IsOptional, IsDateString, IsString, IsEnum, IsInt, Min } from 'class-validator';
 import { PetSpecies } from '@prisma/client';
+// PriceType not needed here — filter uses plain Int values
 
 @InputType()
 export class PetFilterInput {
@@ -52,4 +53,16 @@ export class JobFilterInput {
   @Field(() => PetFilterInput, { nullable: true, description: '반려동물 필터' })
   @IsOptional()
   pets?: PetFilterInput;
+
+  @Field(() => Int, { nullable: true, description: '최소 가격' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  minPrice?: number;
+
+  @Field(() => Int, { nullable: true, description: '최대 가격' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  maxPrice?: number;
 }

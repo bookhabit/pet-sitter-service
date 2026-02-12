@@ -57,6 +57,8 @@ export class JobsResolver {
     if (filter?.pets?.ageBelow !== undefined) {
       queryParams['pets[age_below]'] = filter.pets.ageBelow;
     }
+    if (filter?.minPrice !== undefined) queryParams.min_price = filter.minPrice;
+    if (filter?.maxPrice !== undefined) queryParams.max_price = filter.maxPrice;
 
     const result = await this.jobsService.findAll(queryParams);
 

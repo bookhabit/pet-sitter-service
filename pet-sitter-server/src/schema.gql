@@ -27,11 +27,16 @@ input Base64FileInput {
 
 input CreateJobInput {
   activity: String!
+  address: String
   end_time: String!
+  latitude: Float
+  longitude: Float
   pets: [CreatePetInput!]!
 
   """사전 업로드된 공고 사진 ID 목록"""
   photo_ids: [String!]
+  price: Int
+  price_type: PriceType
   start_time: String!
 }
 
@@ -77,6 +82,12 @@ input JobFilterInput {
   """종료 시간 이전 (ISO 8601)"""
   endTimeBefore: String
 
+  """최대 가격"""
+  maxPrice: Int
+
+  """최소 가격"""
+  minPrice: Int
+
   """반려동물 필터"""
   pets: PetFilterInput
 
@@ -89,14 +100,19 @@ input JobFilterInput {
 
 type JobModel {
   activity: String!
+  address: String
   createdAt: DateTime!
   creator_user_id: String!
   end_time: DateTime!
   id: ID!
+  latitude: Float
+  longitude: Float
   pets: [PetModel!]!
 
   """공고에 첨부된 사진 목록"""
   photos: [PhotoModel!]!
+  price: Int
+  price_type: PriceType
   start_time: DateTime!
   updatedAt: DateTime!
 }
@@ -226,6 +242,11 @@ type PhotoModel {
   user_id: String
 }
 
+enum PriceType {
+  daily
+  hourly
+}
+
 type Query {
   """구인공고 상세 조회"""
   job(id: String!): JobModel!
@@ -283,8 +304,13 @@ input UpdateJobApplicationInput {
 
 input UpdateJobInput {
   activity: String
+  address: String
   end_time: String
+  latitude: Float
+  longitude: Float
   pets: [CreatePetInput!]
+  price: Int
+  price_type: PriceType
   start_time: String
 }
 

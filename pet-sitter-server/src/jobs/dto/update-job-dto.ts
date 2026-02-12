@@ -1,6 +1,7 @@
-import { IsString, IsDateString, IsOptional, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsDateString, IsOptional, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, MinLength, MaxLength, IsNumber, IsInt, Min, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PetDto } from './create-job-dto';
+import { PriceType } from '@prisma/client';
 
 export class UpdateJobDto {
   @IsOptional()
@@ -24,4 +25,25 @@ export class UpdateJobDto {
   @ValidateNested({ each: true })
   @Type(() => PetDto)
   pets?: PetDto[];
+
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  price?: number;
+
+  @IsOptional()
+  @IsEnum(PriceType)
+  price_type?: PriceType;
 }

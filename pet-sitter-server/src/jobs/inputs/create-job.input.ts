@@ -1,7 +1,8 @@
-import { InputType, Field } from '@nestjs/graphql';
-import { IsString, IsUUID, IsDateString, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, MinLength, MaxLength, IsNotEmpty, IsOptional } from 'class-validator';
+import { InputType, Field, Float, Int } from '@nestjs/graphql';
+import { IsString, IsUUID, IsDateString, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, MinLength, MaxLength, IsNotEmpty, IsOptional, IsNumber, IsInt, Min, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreatePetInput } from './create-pet.input';
+import { PriceType } from '@prisma/client';
 
 @InputType()
 export class CreateJobInput {
@@ -33,4 +34,30 @@ export class CreateJobInput {
   @IsArray()
   @IsUUID('4', { each: true })
   photo_ids?: string[];
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  price?: number;
+
+  @Field(() => PriceType, { nullable: true })
+  @IsOptional()
+  @IsEnum(PriceType)
+  price_type?: PriceType;
 }

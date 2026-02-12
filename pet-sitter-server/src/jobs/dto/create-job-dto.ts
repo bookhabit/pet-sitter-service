@@ -1,6 +1,6 @@
-import { IsString, IsUUID, IsDateString, IsNotEmpty, IsInt, Min, Max, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsEnum, IsOptional, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsUUID, IsDateString, IsNotEmpty, IsInt, Min, Max, IsArray, ArrayMinSize, ArrayMaxSize, ValidateNested, IsEnum, IsOptional, MinLength, MaxLength, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PetSpecies } from '@prisma/client';
+import { PetSpecies, PriceType } from '@prisma/client';
 
 export class PetDto {
     @IsString({ message: 'name must be a string' })
@@ -55,4 +55,25 @@ export class CreateJobDto {
     @IsArray()
     @IsUUID('4', { each: true })
     photo_ids?: string[];
+
+    @IsOptional()
+    @IsString()
+    address?: string;
+
+    @IsOptional()
+    @IsNumber()
+    latitude?: number;
+
+    @IsOptional()
+    @IsNumber()
+    longitude?: number;
+
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    price?: number;
+
+    @IsOptional()
+    @IsEnum(PriceType)
+    price_type?: PriceType;
 }

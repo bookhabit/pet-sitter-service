@@ -56,6 +56,11 @@ export class JobsService {
                 start_time: startTime,
                 end_time: endTime,
                 activity: createJobDto.activity,
+                address: createJobDto.address,
+                latitude: createJobDto.latitude,
+                longitude: createJobDto.longitude,
+                price: createJobDto.price,
+                price_type: createJobDto.price_type,
                 pets: {
                     create: petsWithId.map(pet => ({
                         id: pet.id,
@@ -127,6 +132,17 @@ export class JobsService {
                 mode: 'insensitive', // 대소문자 구분 없이 검색
             };
             console.log('🔎 [필터] activity contains:', query.activity);
+        }
+
+        // 가격 필터링
+        if (query.min_price !== undefined || query.max_price !== undefined) {
+            where.price = {};
+            if (query.min_price !== undefined) {
+                where.price.gte = query.min_price;
+            }
+            if (query.max_price !== undefined) {
+                where.price.lte = query.max_price;
+            }
         }
 
         // pets 필터링 (쿼리 파라미터의 bracket notation 처리)
@@ -329,6 +345,21 @@ export class JobsService {
 
         if (updateJobDto.activity) {
             updateData.activity = updateJobDto.activity;
+        }
+        if (updateJobDto.address !== undefined) {
+            updateData.address = updateJobDto.address;
+        }
+        if (updateJobDto.latitude !== undefined) {
+            updateData.latitude = updateJobDto.latitude;
+        }
+        if (updateJobDto.longitude !== undefined) {
+            updateData.longitude = updateJobDto.longitude;
+        }
+        if (updateJobDto.price !== undefined) {
+            updateData.price = updateJobDto.price;
+        }
+        if (updateJobDto.price_type !== undefined) {
+            updateData.price_type = updateJobDto.price_type;
         }
         if (updateJobDto.pets) {
             // 기존 pets 삭제 후 새로 생성
