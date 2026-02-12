@@ -34,7 +34,8 @@ async function bootstrap() {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        description: 'JWT Authorization header. 로그인(POST /sessions) 후 auth_header 값을 입력하세요.',
+        description:
+          'JWT Authorization header. 로그인(POST /sessions) 후 auth_header 값을 입력하세요.',
       },
       'access-token',
     )
