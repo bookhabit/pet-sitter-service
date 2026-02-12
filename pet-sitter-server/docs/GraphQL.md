@@ -1953,7 +1953,7 @@ mutation CreateJobWithLocation {
         age: 2
         species: Dog
         breed: "말티즈"
-        size: SMALL
+        size: "SMALL"
       }
     ]
   }) {

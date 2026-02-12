@@ -1,8 +1,11 @@
 import { IsEmail } from "class-validator";
-import { PickType } from "@nestjs/mapped-types";
-import { CreateUserDto } from "../../users/dto/create-user-dto";
+import { ApiProperty } from "@nestjs/swagger";
 
-export class LoginDto extends PickType(CreateUserDto, ['password'] as const) {
+export class LoginDto {
+    @ApiProperty({ example: 'owner1@test.com', description: '이메일' })
     @IsEmail()
     email: string;
+
+    @ApiProperty({ example: 'password123', description: '비밀번호' })
+    password: string;
 }
