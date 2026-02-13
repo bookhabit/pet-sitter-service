@@ -15,8 +15,9 @@
 7. [리뷰 기능 테스트](#리뷰-작성--petowner--petsitter-job5-시나리오)
 8. [위치·가격 정보 테스트](#위치가격-정보-포함-공고-등록-location--price)
 9. [즐겨찾기 테스트](#즐겨찾기-토글-favorites--sitter1-시나리오)
-10. [OpenAPI(Swagger) 문서](#openapi-문서)
-11. [사진 업로드](./PHOTO_UPLOAD.md#rest-api)
+10. [채팅 테스트](#채팅방-목록-조회)
+11. [OpenAPI(Swagger) 문서](#openapi-문서)
+12. [사진 업로드](./PHOTO_UPLOAD.md#rest-api)
 
 ---
 
@@ -1255,6 +1256,207 @@ async function bootstrap() {
 
 ---
 
+### 20. 채팅방 목록 조회
+
+> **사전 조건**: seed 데이터 기준, owner1은 chatRoom1(job2, sitter1과 대화)에 참여 중.
+
+**Step 1 — `owner1` 계정으로 로그인:**
+
+```bash
+curl -X POST http://localhost:3000/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"email": "owner1@test.com", "password": "password123"}'
+```
+
+**Step 2 — 내 채팅방 목록 조회:**
+
+```bash
+curl -X GET http://localhost:3000/chat-rooms \
+  -H "Authorization: Bearer <OWNER1_TOKEN>"
+```
+
+**예상 응답 (200 OK):**
+```json
+[
+  {
+    "id": "<CHATROOM1_ID>",
+    "job_application_id": "<APPLICATION_ID>",
+    "jobApplication": {
+      "id": "...",
+      "user_id": "<SITTER1_ID>",
+      "job_id": "<JOB2_ID>",
+      "user": { "id": "...", "full_name": "박돌봄", "email": "sitter1@test.com" },
+      "job": { "id": "...", "activity": "고양이 돌봄 서비스 요청합니다" }
+    },
+    "messages": [
+      {
+        "id": "...",
+        "content": "좋습니다! 그러면 내일 오전 10시에 뵐 수 있을까요?",
+        "sender_id": "<OWNER1_ID>",
+        "createdAt": "..."
+      }
+    ],
+    "unreadCount": 0,
+    "createdAt": "..."
+  }
+]
+```
+
+---
+
+### 21. 채팅방 목록 — 안읽은 메시지 확인
+
+> owner2는 chatRoom2에서 sitter2의 마지막 메시지를 안읽은 상태 (unreadCount=1)
+
+```bash
+# owner2 로그인 후
+curl -X GET http://localhost:3000/chat-rooms \
+  -H "Authorization: Bearer <OWNER2_TOKEN>"
+```
+
+**예상 응답**: `unreadCount: 1`
+
+```bash
+# sitter2 로그인 후 — 본인은 모두 읽음
+curl -X GET http://localhost:3000/chat-rooms \
+  -H "Authorization: Bearer <SITTER2_TOKEN>"
+```
+
+**예상 응답**: `unreadCount: 0`
+
+---
+
+### 22. 메시지 히스토리 조회 (커서 페이지네이션)
+
+```bash
+# chatRoom1의 메시지 히스토리 조회 (최신순, 기본 20개)
+curl -X GET "http://localhost:3000/chat-rooms/<CHATROOM1_ID>/messages" \
+  -H "Authorization: Bearer <OWNER1_TOKEN>"
+```
+
+**예상 응답 (200 OK):**
+```json
+{
+  "messages": [
+    {
+      "id": "msg-uuid-5",
+      "content": "좋습니다! 그러면 내일 오전 10시에 뵐 수 있을까요?",
+      "sender_id": "<OWNER1_ID>",
+      "sender": { "id": "...", "full_name": "김주인", "email": "owner1@test.com" },
+      "createdAt": "..."
+    },
+    {
+      "id": "msg-uuid-4",
+      "content": "네, 페르시안 3마리를 돌본 경험이 있습니다. 털 관리도 가능해요!",
+      "sender_id": "<SITTER1_ID>",
+      "sender": { "id": "...", "full_name": "박돌봄" },
+      "createdAt": "..."
+    }
+  ],
+  "nextCursor": null
+}
+```
+
+**커서 기반 페이지네이션:**
+
+```bash
+# limit=2로 첫 페이지 조회
+curl -X GET "http://localhost:3000/chat-rooms/<CHATROOM1_ID>/messages?limit=2" \
+  -H "Authorization: Bearer <OWNER1_TOKEN>"
+
+# nextCursor로 다음 페이지 조회
+curl -X GET "http://localhost:3000/chat-rooms/<CHATROOM1_ID>/messages?limit=2&cursor=<NEXT_CURSOR>" \
+  -H "Authorization: Bearer <OWNER1_TOKEN>"
+```
+
+---
+
+### 23. 채팅 에러 케이스 테스트
+
+#### 케이스 1: 권한 없는 사용자가 메시지 히스토리 조회 → 403
+
+> chatRoom1은 owner1 ↔ sitter1 전용. owner2는 접근 불가.
+
+```bash
+curl -X GET "http://localhost:3000/chat-rooms/<CHATROOM1_ID>/messages" \
+  -H "Authorization: Bearer <OWNER2_TOKEN>"
+```
+
+**예상 응답 (403 Forbidden):**
+```json
+{
+  "statusCode": 403,
+  "message": "이 채팅방에 접근할 권한이 없습니다",
+  "error": "Forbidden"
+}
+```
+
+#### 케이스 2: 존재하지 않는 채팅방 조회 → 404
+
+```bash
+curl -X GET "http://localhost:3000/chat-rooms/00000000-0000-0000-0000-000000000000/messages" \
+  -H "Authorization: Bearer <ANY_TOKEN>"
+```
+
+**예상 응답 (404 Not Found):**
+```json
+{
+  "statusCode": 404,
+  "message": "ChatRoom not found",
+  "error": "Not Found"
+}
+```
+
+---
+
+### 24. WebSocket 채팅 테스트 (Socket.io)
+
+> WebSocket은 Swagger로 테스트할 수 없습니다. Node.js 스크립트 또는 Socket.io 클라이언트를 사용하세요.
+
+**연결:**
+```typescript
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:3000/chat', {
+  auth: { token: 'JWT토큰 (Bearer 제외)' },
+});
+```
+
+**채팅방 입장 (chatRoom3 = 메시지 없는 빈 채팅방):**
+```typescript
+// applications[5]의 ID로 joinRoom
+socket.emit('joinRoom', { jobApplicationId: '<APPLICATION5_ID>' });
+
+socket.on('joinedRoom', (data) => {
+  console.log('입장:', data.chatRoomId);
+});
+```
+
+**메시지 송수신:**
+```typescript
+socket.emit('sendMessage', { chatRoomId: '<CHATROOM3_ID>', content: '안녕하세요!' });
+
+socket.on('receiveMessage', (msg) => {
+  console.log('수신:', msg.content, '보낸 사람:', msg.sender.full_name);
+});
+```
+
+**읽음처리 알림:**
+```typescript
+socket.on('messagesRead', (data) => {
+  console.log(`${data.userId}가 읽음 (${data.lastReadAt})`);
+});
+```
+
+**에러 처리:**
+```typescript
+socket.on('error', (err) => {
+  console.error('에러:', err.message);
+});
+```
+
+---
+
 ## 📊 REST API 엔드포인트 요약
 
 ### Users
@@ -1299,6 +1501,24 @@ async function bootstrap() {
 | POST | `/favorites` | 즐겨찾기 토글 (추가/제거) | ✅ | PetSitter |
 | GET | `/favorites` | 내 즐겨찾기 목록 조회 | ✅ | PetSitter |
 | DELETE | `/favorites/:jobId` | 즐겨찾기 직접 제거 | ✅ | PetSitter |
+
+### Chat (채팅)
+
+| 메서드 | 엔드포인트 | 설명 | 인증 | 권한 |
+|--------|-----------|------|------|------|
+| GET | `/chat-rooms` | 내 채팅방 목록 (최근 메시지 + 안읽은 수) | ✅ | - |
+| GET | `/chat-rooms/:id/messages` | 메시지 히스토리 (커서 페이지네이션) | ✅ | 채팅 참여자 |
+
+### WebSocket (실시간 채팅)
+
+| 이벤트 | 방향 | Payload | 설명 |
+|--------|------|---------|------|
+| `joinRoom` | client → server | `{ jobApplicationId }` | 채팅방 입장 + 읽음처리 |
+| `joinedRoom` | server → client | `{ chatRoomId, jobApplicationId }` | 입장 확인 |
+| `sendMessage` | client → server | `{ chatRoomId, content }` | 메시지 전송 |
+| `receiveMessage` | server → room | `{ id, content, sender_id, ... }` | 메시지 수신 |
+| `messagesRead` | server → room | `{ chatRoomId, userId, lastReadAt }` | 읽음 상태 알림 |
+| `error` | server → client | `{ message }` | 에러 알림 |
 
 ---
 
@@ -1443,5 +1663,5 @@ app.enableCors({
 
 ---
 
-**문서 버전**: 1.2
-**최종 수정일**: 2026-02-12
+**문서 버전**: 1.3
+**최종 수정일**: 2026-02-13

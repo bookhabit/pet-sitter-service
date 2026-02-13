@@ -25,6 +25,17 @@ input Base64FileInput {
   originalName: String!
 }
 
+type ChatRoomModel {
+  createdAt: DateTime!
+  id: ID!
+  jobApplication: JobApplicationModel
+  job_application_id: String!
+  messages: [MessageModel!]
+
+  """안읽은 메시지 수"""
+  unreadCount: Int!
+}
+
 input CreateJobInput {
   activity: String!
   address: String
@@ -60,6 +71,17 @@ input CreateReviewInput {
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
+
+input GetMessagesInput {
+  """채팅방 ID"""
+  chatRoomId: ID!
+
+  """커서 (메시지 UUID)"""
+  cursor: String
+
+  """조회할 메시지 수 (기본 20, 최대 100)"""
+  limit: Int = 20
+}
 
 type JobApplicationModel {
   createdAt: DateTime!
@@ -120,6 +142,15 @@ type JobModel {
 input LoginInput {
   email: String!
   password: String!
+}
+
+type MessageModel {
+  chat_room_id: String!
+  content: String!
+  createdAt: DateTime!
+  id: ID!
+  sender: UserModel
+  sender_id: String!
 }
 
 type Mutation {
@@ -191,6 +222,14 @@ type PaginatedJobs {
   pageInfo: PageInfo!
 }
 
+type PaginatedMessages {
+  """메시지 목록"""
+  messages: [MessageModel!]!
+
+  """다음 페이지 커서"""
+  nextCursor: String
+}
+
 input PaginationInput {
   """Cursor 기반 페이지네이션 커서"""
   cursor: String
@@ -251,6 +290,9 @@ enum PriceType {
 }
 
 type Query {
+  """채팅방 메시지 히스토리"""
+  chatRoomMessages(input: GetMessagesInput!): PaginatedMessages!
+
   """구인공고 상세 조회"""
   job(id: String!): JobModel!
 
@@ -262,6 +304,9 @@ type Query {
 
   """현재 로그인한 사용자 조회"""
   me: UserModel!
+
+  """내 채팅방 목록"""
+  myChatRooms: [ChatRoomModel!]!
 
   """내 즐겨찾기 공고 목록 (PetSitter만 가능)"""
   myFavorites: [JobModel!]!

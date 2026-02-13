@@ -15,8 +15,9 @@
 7. [리뷰 기능 테스트](#리뷰-작성--petowner--petsitter-job5-시나리오)
 8. [위치·가격 정보 테스트](#위치가격-정보-포함-공고-등록-location--price)
 9. [즐겨찾기 테스트](#즐겨찾기-토글-togglefavorite--sitter1-시나리오)
-10. [실전 예시](#실전-예시)
-11. [사진 업로드](./PHOTO_UPLOAD.md#graphql-api)
+10. [채팅 테스트](#채팅방-목록-조회-mychatrooms)
+11. [실전 예시](#실전-예시)
+12. [사진 업로드](./PHOTO_UPLOAD.md#graphql-api)
 
 ---
 
@@ -2222,6 +2223,317 @@ mutation ToggleFavoriteNotFound {
 
 ---
 
+### 36. 채팅방 목록 조회 (myChatRooms)
+
+> **사전 조건**: seed 데이터 기준, owner1은 chatRoom1(job2, sitter1과 대화)에 참여 중.
+
+**HTTP Headers:**
+```json
+{ "Authorization": "Bearer <OWNER1_JWT_TOKEN>" }
+```
+
+**Step 1 — `owner1` 계정으로 로그인:**
+```graphql
+mutation LoginOwner1 {
+  login(data: {
+    email: "owner1@test.com"
+    password: "password123"
+  }) {
+    user_id
+    auth_header
+  }
+}
+```
+
+**Step 2 — 내 채팅방 목록 조회:**
+```graphql
+query MyChatRooms {
+  myChatRooms {
+    id
+    job_application_id
+    unreadCount
+    messages {
+      id
+      content
+      sender_id
+      createdAt
+    }
+    jobApplication {
+      id
+      status
+      user {
+        id
+        full_name
+      }
+      job {
+        id
+        activity
+      }
+    }
+    createdAt
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "myChatRooms": [
+      {
+        "id": "<CHATROOM1_ID>",
+        "job_application_id": "<APPLICATION_ID>",
+        "unreadCount": 0,
+        "messages": [
+          {
+            "id": "...",
+            "content": "좋습니다! 그러면 내일 오전 10시에 뵐 수 있을까요?",
+            "sender_id": "<OWNER1_ID>",
+            "createdAt": "..."
+          }
+        ],
+        "jobApplication": {
+          "id": "...",
+          "status": "approved",
+          "user": { "id": "...", "full_name": "박돌봄" },
+          "job": { "id": "...", "activity": "고양이 돌봄 서비스 요청합니다" }
+        },
+        "createdAt": "..."
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 37. 채팅방 목록 — 안읽은 메시지 확인
+
+> owner2는 chatRoom2에서 sitter2의 마지막 메시지를 안읽은 상태 (unreadCount=1)
+
+```graphql
+# owner2 토큰으로 실행
+query MyChatRoomsOwner2 {
+  myChatRooms {
+    id
+    unreadCount
+    messages {
+      content
+    }
+  }
+}
+```
+
+**예상 응답**: `unreadCount: 1`
+
+```graphql
+# sitter2 토큰으로 실행 — 본인은 모두 읽음
+query MyChatRoomsSitter2 {
+  myChatRooms {
+    id
+    unreadCount
+    messages {
+      content
+    }
+  }
+}
+```
+
+**예상 응답**: `unreadCount: 0`
+
+---
+
+### 38. 메시지 히스토리 조회 (chatRoomMessages)
+
+**HTTP Headers:**
+```json
+{ "Authorization": "Bearer <OWNER1_JWT_TOKEN>" }
+```
+
+```graphql
+query ChatRoomMessages {
+  chatRoomMessages(input: {
+    chatRoomId: "<CHATROOM1_ID>"
+    limit: 20
+  }) {
+    messages {
+      id
+      content
+      sender_id
+      createdAt
+    }
+    nextCursor
+  }
+}
+```
+
+**예상 응답:**
+```json
+{
+  "data": {
+    "chatRoomMessages": {
+      "messages": [
+        {
+          "id": "msg-uuid-5",
+          "content": "좋습니다! 그러면 내일 오전 10시에 뵐 수 있을까요?",
+          "sender_id": "<OWNER1_ID>",
+          "createdAt": "..."
+        },
+        {
+          "id": "msg-uuid-4",
+          "content": "네, 페르시안 3마리를 돌본 경험이 있습니다. 털 관리도 가능해요!",
+          "sender_id": "<SITTER1_ID>",
+          "createdAt": "..."
+        }
+      ],
+      "nextCursor": null
+    }
+  }
+}
+```
+
+---
+
+### 39. 메시지 히스토리 — 커서 페이지네이션
+
+```graphql
+# 첫 페이지 (2개씩)
+query FirstPage {
+  chatRoomMessages(input: {
+    chatRoomId: "<CHATROOM1_ID>"
+    limit: 2
+  }) {
+    messages {
+      id
+      content
+    }
+    nextCursor
+  }
+}
+
+# 다음 페이지 (nextCursor 사용)
+query NextPage {
+  chatRoomMessages(input: {
+    chatRoomId: "<CHATROOM1_ID>"
+    limit: 2
+    cursor: "<NEXT_CURSOR>"
+  }) {
+    messages {
+      id
+      content
+    }
+    nextCursor
+  }
+}
+```
+
+---
+
+### 40. 채팅 에러 케이스 테스트
+
+#### 케이스 1: 권한 없는 사용자가 메시지 조회 → 403
+
+> chatRoom1은 owner1 ↔ sitter1 전용. owner2는 접근 불가.
+
+```graphql
+# owner2 토큰으로 실행
+query UnauthorizedAccess {
+  chatRoomMessages(input: {
+    chatRoomId: "<CHATROOM1_ID>"
+  }) {
+    messages {
+      id
+      content
+    }
+  }
+}
+```
+
+**예상 응답 (에러):**
+```json
+{
+  "errors": [
+    {
+      "message": "이 채팅방에 접근할 권한이 없습니다",
+      "extensions": { "code": "FORBIDDEN" }
+    }
+  ],
+  "data": null
+}
+```
+
+#### 케이스 2: 존재하지 않는 채팅방 조회 → 404
+
+```graphql
+query ChatRoomNotFound {
+  chatRoomMessages(input: {
+    chatRoomId: "00000000-0000-0000-0000-000000000000"
+  }) {
+    messages {
+      id
+    }
+  }
+}
+```
+
+**예상 응답 (에러):**
+```json
+{
+  "errors": [
+    {
+      "message": "ChatRoom not found",
+      "extensions": { "code": "NOT_FOUND" }
+    }
+  ],
+  "data": null
+}
+```
+
+---
+
+### 41. WebSocket 채팅 테스트 (Socket.io)
+
+> WebSocket은 GraphQL Playground로 테스트할 수 없습니다.
+> 채팅방 생성과 메시지 전송은 WebSocket 전용이며, GraphQL은 조회만 담당합니다.
+
+**클라이언트 연결 예시:**
+```typescript
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:3000/chat', {
+  auth: { token: 'JWT토큰 (Bearer 제외)' },
+});
+
+// 채팅방 입장 (chatRoom3 = 빈 채팅방, WebSocket 테스트용)
+socket.emit('joinRoom', { jobApplicationId: '<APPLICATION5_ID>' });
+socket.on('joinedRoom', (data) => console.log('입장:', data.chatRoomId));
+
+// 메시지 송수신
+socket.emit('sendMessage', { chatRoomId: '<CHATROOM3_ID>', content: '안녕하세요!' });
+socket.on('receiveMessage', (msg) => console.log('수신:', msg.content));
+
+// 읽음처리 알림
+socket.on('messagesRead', (data) => {
+  console.log(`${data.userId}가 읽음 (${data.lastReadAt})`);
+});
+
+// 에러
+socket.on('error', (err) => console.error(err.message));
+```
+
+**WebSocket 이벤트 요약:**
+
+| 이벤트 | 방향 | Payload | 설명 |
+|--------|------|---------|------|
+| `joinRoom` | client → server | `{ jobApplicationId }` | 채팅방 입장 + 읽음처리 |
+| `joinedRoom` | server → client | `{ chatRoomId, jobApplicationId }` | 입장 확인 |
+| `sendMessage` | client → server | `{ chatRoomId, content }` | 메시지 전송 |
+| `receiveMessage` | server → room | `{ id, content, sender_id, sender, createdAt }` | 메시지 수신 |
+| `messagesRead` | server → room | `{ chatRoomId, userId, lastReadAt }` | 읽음 상태 변경 알림 |
+| `error` | server → client | `{ message }` | 에러 알림 |
+
+---
+
 ## 💡 실전 예시
 
 ### 복잡한 Query 예시 (Field Resolver 사용)
@@ -2409,5 +2721,5 @@ npx prisma generate
 
 ---
 
-**문서 버전**: 1.2
-**최종 수정일**: 2026-02-12
+**문서 버전**: 1.3
+**최종 수정일**: 2026-02-13

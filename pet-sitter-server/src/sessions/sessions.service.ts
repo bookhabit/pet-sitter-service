@@ -15,6 +15,7 @@ export class SessionsService {
         const user = await this.prisma.user.findUnique({
             where: { email: dto.email },
         });
+        console.log('dto',dto)
 
         if (!user) {
             throw new UnauthorizedException('Invalid email or password');

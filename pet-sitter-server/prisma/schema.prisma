@@ -39,6 +39,12 @@ model User {
 
   // 관계: User has Favorites (1:N)
   favorites Favorite[]
+
+  // 관계: User sends Messages (1:N)
+  sentMessages Message[] @relation("SentMessages")
+
+  // 관계: User has ChatRoomReads (1:N)
+  chatRoomReads ChatRoomRead[] @relation("ChatRoomReads")
 }
 
 enum Role {
@@ -123,6 +129,9 @@ model JobApplication {
   job_id String
   job Job @relation(fields: [job_id], references: [id])
   
+  // 관계: JobApplication has ChatRoom (1:1)
+  chatRoom ChatRoom?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -204,4 +213,34 @@ model Favorite {
   createdAt DateTime @default(now())
 
   @@unique([user_id, job_id])
+}
+
+model ChatRoom {
+  id                   String         @id @default(uuid())
+  job_application_id   String         @unique
+  jobApplication       JobApplication @relation(fields: [job_application_id], references: [id])
+  messages             Message[]
+  readReceipts         ChatRoomRead[]
+  createdAt            DateTime       @default(now())
+}
+
+model Message {
+  id            String   @id @default(uuid())
+  content       String
+  sender_id     String
+  chat_room_id  String
+  sender        User     @relation("SentMessages", fields: [sender_id], references: [id])
+  chatRoom      ChatRoom @relation(fields: [chat_room_id], references: [id])
+  createdAt     DateTime @default(now())
+}
+
+model ChatRoomRead {
+  id            String   @id @default(uuid())
+  chat_room_id  String
+  user_id       String
+  last_read_at  DateTime @default(now())
+  chatRoom      ChatRoom @relation(fields: [chat_room_id], references: [id])
+  user          User     @relation("ChatRoomReads", fields: [user_id], references: [id])
+
+  @@unique([chat_room_id, user_id])
 }

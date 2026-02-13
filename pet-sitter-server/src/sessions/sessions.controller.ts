@@ -15,6 +15,7 @@ export class SessionsController {
     @ApiResponse({ status: 200, description: '로그인 성공 — user_id와 auth_header 반환' })
     @ApiResponse({ status: 401, description: '이메일 또는 비밀번호 불일치' })
     async login(@Body() loginDto: LoginDto) {
+        console.log('login')
         return this.sessionsService.login(loginDto);
     }
 }

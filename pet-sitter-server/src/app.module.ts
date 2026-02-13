@@ -13,6 +13,7 @@ import { JobApplicationModule } from './job-application/job-application.module';
 import { PhotosModule } from './photos/photos.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { FavoritesModule } from './favorites/favorites.module';
+import { ChatModule } from './chat/chat.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ConfigModule } from '@nestjs/config';
@@ -31,6 +32,7 @@ import { ConfigModule } from '@nestjs/config';
     PhotosModule,
     ReviewsModule,
     FavoritesModule,
+    ChatModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),

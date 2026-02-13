@@ -13,6 +13,9 @@ async function main() {
 
   // 기존 데이터 삭제 (외래키 순서 주의)
   console.log('🗑️  기존 데이터 삭제 중...');
+  await prisma.chatRoomRead.deleteMany();
+  await prisma.message.deleteMany();
+  await prisma.chatRoom.deleteMany();
   await prisma.favorite.deleteMany();
   await prisma.review.deleteMany();
   await prisma.photo.deleteMany();
@@ -299,6 +302,95 @@ async function main() {
   console.log(`✅ ${favorites.length}개의 즐겨찾기 생성 완료\n`);
 
   // ──────────────────────────────────────────
+  // 6. ChatRooms + Messages 생성
+  // ──────────────────────────────────────────
+  console.log('💬 ChatRooms + Messages 생성 중...');
+
+  // chatRoom1: job2 지원(applications[2]) — owner1 ↔ sitter1 | 메시지 5개 + 읽음처리 완료
+  const chatRoom1 = await prisma.chatRoom.create({
+    data: { id: randomUUID(), job_application_id: applications[2].id },
+  });
+
+  const chatRoom1Messages = [];
+  const baseTime = new Date(now.getTime() - 2 * 60 * 60 * 1000); // 2시간 전부터
+  const msgData1 = [
+    { sender: owner1, content: '안녕하세요! 고양이 돌봄 지원해주셔서 감사합니다.' },
+    { sender: sitter1, content: '안녕하세요! 고양이 돌봄 경험이 많아서 지원했습니다.' },
+    { sender: owner1, content: '혹시 페르시안 종 돌봄 경험이 있으신가요?' },
+    { sender: sitter1, content: '네, 페르시안 3마리를 돌본 경험이 있습니다. 털 관리도 가능해요!' },
+    { sender: owner1, content: '좋습니다! 그러면 내일 오전 10시에 뵐 수 있을까요?' },
+  ];
+
+  for (let i = 0; i < msgData1.length; i++) {
+    const msg = await prisma.message.create({
+      data: {
+        id: randomUUID(),
+        content: msgData1[i].content,
+        sender_id: msgData1[i].sender.id,
+        chat_room_id: chatRoom1.id,
+        createdAt: new Date(baseTime.getTime() + i * 5 * 60 * 1000), // 5분 간격
+      },
+    });
+    chatRoom1Messages.push(msg);
+  }
+
+  // chatRoom1 읽음처리: 양측 모두 읽음
+  const lastMsg1Time = chatRoom1Messages[chatRoom1Messages.length - 1].createdAt;
+  await Promise.all([
+    prisma.chatRoomRead.create({
+      data: { id: randomUUID(), chat_room_id: chatRoom1.id, user_id: owner1.id, last_read_at: lastMsg1Time },
+    }),
+    prisma.chatRoomRead.create({
+      data: { id: randomUUID(), chat_room_id: chatRoom1.id, user_id: sitter1.id, last_read_at: lastMsg1Time },
+    }),
+  ]);
+
+  // chatRoom2: job3 지원(applications[3]) — owner2 ↔ sitter2 | 메시지 3개 + sitter2 안읽은 메시지 1개
+  const chatRoom2 = await prisma.chatRoom.create({
+    data: { id: randomUUID(), job_application_id: applications[3].id },
+  });
+
+  const chatRoom2Messages = [];
+  const baseTime2 = new Date(now.getTime() - 1 * 60 * 60 * 1000); // 1시간 전부터
+  const msgData2 = [
+    { sender: sitter2, content: '허스키 산책 지원합니다! 대형견 산책 경험 풍부합니다.' },
+    { sender: owner2, content: '반갑습니다. 혹시 해운대 근처 거주하시나요?' },
+    { sender: sitter2, content: '네, 해운대구 거주 중입니다. 매일 산책 가능합니다.' },
+  ];
+
+  for (let i = 0; i < msgData2.length; i++) {
+    const msg = await prisma.message.create({
+      data: {
+        id: randomUUID(),
+        content: msgData2[i].content,
+        sender_id: msgData2[i].sender.id,
+        chat_room_id: chatRoom2.id,
+        createdAt: new Date(baseTime2.getTime() + i * 3 * 60 * 1000), // 3분 간격
+      },
+    });
+    chatRoom2Messages.push(msg);
+  }
+
+  // chatRoom2 읽음처리: owner2는 2번째 메시지까지만 읽음 (sitter2의 마지막 메시지 안읽음 = 1표시)
+  await Promise.all([
+    prisma.chatRoomRead.create({
+      data: { id: randomUUID(), chat_room_id: chatRoom2.id, user_id: owner2.id, last_read_at: chatRoom2Messages[1].createdAt },
+    }),
+    prisma.chatRoomRead.create({
+      data: { id: randomUUID(), chat_room_id: chatRoom2.id, user_id: sitter2.id, last_read_at: chatRoom2Messages[2].createdAt },
+    }),
+  ]);
+
+  // chatRoom3: job5 지원(applications[5]) — both ↔ sitter1 | 채팅방만 생성 (메시지 없음, WebSocket 테스트용)
+  const chatRoom3 = await prisma.chatRoom.create({
+    data: { id: randomUUID(), job_application_id: applications[5].id },
+  });
+
+  const chatRooms = [chatRoom1, chatRoom2, chatRoom3];
+  const totalMessages = chatRoom1Messages.length + chatRoom2Messages.length;
+  console.log(`✅ ${chatRooms.length}개의 채팅방, ${totalMessages}개의 메시지 생성 완료\n`);
+
+  // ──────────────────────────────────────────
   // 요약 출력
   // ──────────────────────────────────────────
   console.log('═══════════════════════════════════════════');
@@ -310,6 +402,8 @@ async function main() {
   console.log(`   JobApplications: ${applications.length}개`);
   console.log(`   Reviews:         ${reviews.length}개`);
   console.log(`   Favorites:       ${favorites.length}개`);
+  console.log(`   ChatRooms:       ${chatRooms.length}개`);
+  console.log(`   Messages:        ${totalMessages}개`);
   console.log('');
 
   console.log('🔑 테스트 계정 (email / password)');
@@ -354,6 +448,25 @@ async function main() {
   console.log('   sitter1(박돌봄): job3(허스키), job4(고양이 돌봄) 즐겨찾기');
   console.log('   sitter2(최돌봄): job1(강남 산책), job5(신촌 소형견) 즐겨찾기');
   console.log('   → toggleFavorite 테스트: job3을 sitter1으로 다시 누르면 제거됨');
+  console.log('');
+  console.log('💬 채팅 기능 테스트 시나리오');
+  console.log('───────────────────────────────────────────');
+  console.log('   [chatRoom1] job2 기반 — owner1(김주인) ↔ sitter1(박돌봄)');
+  console.log('              메시지 5개, 양측 모두 읽음 완료');
+  console.log('              → REST: GET /chat-rooms 으로 목록 확인 (unreadCount=0)');
+  console.log('              → REST: GET /chat-rooms/:id/messages 로 히스토리 확인');
+  console.log('');
+  console.log('   [chatRoom2] job3 기반 — owner2(이주인) ↔ sitter2(최돌봄)');
+  console.log('              메시지 3개, owner2 안읽은 메시지 1개');
+  console.log('              → owner2 로그인 시 unreadCount=1 확인');
+  console.log('              → sitter2 로그인 시 unreadCount=0 확인');
+  console.log('');
+  console.log('   [chatRoom3] job5 기반 — both(양면인) ↔ sitter1(박돌봄)');
+  console.log('              메시지 없음 (WebSocket sendMessage 테스트용)');
+  console.log('              → Socket.io 연결 후 joinRoom/sendMessage 테스트');
+  console.log('');
+  console.log('   WebSocket 연결: ws://localhost:3000/chat');
+  console.log('   auth: { token: "JWT토큰" }');
   console.log('═══════════════════════════════════════════');
   console.log('✅ 테스트 데이터 생성 완료!');
 }
