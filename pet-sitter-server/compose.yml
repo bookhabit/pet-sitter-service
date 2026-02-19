@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ckeh0827
+      POSTGRES_PASSWORD: ho0827
+      POSTGRES_DB: nestStudy
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ckeh0827 -d nestStudy"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      NODE_ENV: development
+      PORT: "8000"
+      DATABASE_URL: postgresql://ckeh0827:ho0827@db:5432/nestStudy
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: ckeh0827
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

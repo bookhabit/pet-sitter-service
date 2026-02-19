@@ -1,24 +1,26 @@
--- DropForeignKey
-ALTER TABLE "ChatMessage" DROP CONSTRAINT IF EXISTS "ChatMessage_chat_room_id_fkey";
-ALTER TABLE "ChatMessage" DROP CONSTRAINT IF EXISTS "ChatMessage_sender_id_fkey";
-ALTER TABLE "ChatRoom" DROP CONSTRAINT IF EXISTS "ChatRoom_job_id_fkey";
-ALTER TABLE "ChatRoom" DROP CONSTRAINT IF EXISTS "ChatRoom_participant1_id_fkey";
-ALTER TABLE "ChatRoom" DROP CONSTRAINT IF EXISTS "ChatRoom_participant2_id_fkey";
+-- DropForeignKey (이전 채팅 스키마가 있는 경우만)
+ALTER TABLE IF EXISTS "ChatMessage" DROP CONSTRAINT IF EXISTS "ChatMessage_chat_room_id_fkey";
+ALTER TABLE IF EXISTS "ChatMessage" DROP CONSTRAINT IF EXISTS "ChatMessage_sender_id_fkey";
+ALTER TABLE IF EXISTS "ChatRoom" DROP CONSTRAINT IF EXISTS "ChatRoom_job_id_fkey";
+ALTER TABLE IF EXISTS "ChatRoom" DROP CONSTRAINT IF EXISTS "ChatRoom_participant1_id_fkey";
+ALTER TABLE IF EXISTS "ChatRoom" DROP CONSTRAINT IF EXISTS "ChatRoom_participant2_id_fkey";
 
 -- DropIndex
 DROP INDEX IF EXISTS "ChatRoom_participant1_id_idx";
 DROP INDEX IF EXISTS "ChatRoom_participant1_id_participant2_id_job_id_key";
 DROP INDEX IF EXISTS "ChatRoom_participant2_id_idx";
 
--- AlterTable
-ALTER TABLE "ChatRoom" DROP COLUMN IF EXISTS "job_id",
-DROP COLUMN IF EXISTS "participant1_id",
-DROP COLUMN IF EXISTS "participant2_id",
-DROP COLUMN IF EXISTS "updatedAt",
-ADD COLUMN "job_application_id" TEXT NOT NULL;
-
--- DropTable
+-- DropTable (이전 스키마 정리)
 DROP TABLE IF EXISTS "ChatMessage";
+DROP TABLE IF EXISTS "ChatRoom";
+
+-- CreateTable
+CREATE TABLE "ChatRoom" (
+    "id" TEXT NOT NULL,
+    "job_application_id" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "ChatRoom_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "Message" (
