@@ -16,6 +16,7 @@
 7. [컴포넌트 작성 규칙](#7-컴포넌트-작성-규칙)
 8. [아이콘 추가 방법](#8-아이콘-추가-방법)
 9. [이미지 추가 방법](#9-이미지-추가-방법)
+10. [전역 모달 관리](#10-전역-모달-관리)
 
 ---
 
@@ -461,6 +462,206 @@ export type AssetKey = keyof typeof ASSETS;
 5. 사용 예시
    <Image src={ASSETS.DOG} />
 
+---
+
+## 10. 전역 모달 관리
+
+### 구조 개요
+
+```
+src/
+├── store/
+│   └── useModalStore.ts          # Zustand store + 편의 훅
+├── components/
+│   ├── GlobalModal.tsx            # App.tsx 에 한 번 마운트
+│   └── modals/
+│       ├── registry.ts            # SSOT: ID ↔ props타입 ↔ 컴포넌트
+│       └── ConfirmModal.tsx       # 확인/취소 다이얼로그
+└── design-system/atoms/Overlay/
+    └── Overlay.tsx                # Portal + 배경클릭 + ESC + 스크롤 잠금
+```
+
+---
+
+### 10-1. Overlay (디자인 시스템 컴포넌트)
+
+`Overlay`는 Portal 기반의 배경 레이어입니다. 모달 콘텐츠 카드는 children으로 전달합니다.
+
+```tsx
+import { Overlay } from '@/design-system';
+
+// 기본 — 배경 클릭 · ESC 키로 닫기
+const [isOpen, setIsOpen] = useState(false);
+
+<Button onClick={() => setIsOpen(true)}>열기</Button>
+
+<Overlay isOpen={isOpen} onClose={() => setIsOpen(false)}>
+  <div style={{ backgroundColor: 'white', borderRadius: '1.6rem', padding: '3.2rem' }}>
+    <Text size="t2">제목</Text>
+    <Button onClick={() => setIsOpen(false)}>닫기</Button>
+  </div>
+</Overlay>
+```
+
+| Prop | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `isOpen` | `boolean` | — | 오버레이 표시 여부 |
+| `onClose` | `() => void` | — | 닫기 이벤트 핸들러 |
+| `closeOnOverlayClick` | `boolean` | `true` | 배경 클릭 시 닫기 |
+| `closeOnEsc` | `boolean` | `true` | ESC 키로 닫기 |
+| `className` | `string` | — | 모달 컨테이너 추가 클래스 |
+
+**내장 동작**
+- `createPortal`로 `document.body`에 렌더링
+- 열려 있는 동안 `body` 스크롤 잠금
+- 배경 페이드인 + 모달 스케일 애니메이션
+
+---
+
+### 10-2. 전역 모달 — 기본 사용법
+
+어느 컴포넌트에서든 `useOpenModal()` 훅 하나로 모달을 열 수 있습니다.
+
+```tsx
+import { useOpenModal } from '@/store/useModalStore';
+
+export function DeleteButton() {
+  // ✅ open 액션만 구독 — 모달 목록이 바뀌어도 이 컴포넌트는 리렌더링 안 됨
+  const openModal = useOpenModal();
+
+  const handleClick = () => {
+    openModal('confirm', {
+      title: '대원 삭제',
+      message: '정말로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      confirmLabel: '삭제',
+      cancelLabel: '취소',
+      variant: 'danger',
+      onConfirm: () => {
+        // API 호출 등 실제 작업 수행
+      },
+    });
+  };
+
+  return <Button variant="danger" onClick={handleClick}>삭제</Button>;
+}
+```
+
+---
+
+### 10-3. 편의 훅 목록
+
+| 훅 | 구독 대상 | 용도 |
+|----|----------|------|
+| `useOpenModal()` | `state.open` | 모달 열기 |
+| `useCloseModal()` | `state.close` | 특정 모달 닫기 |
+| `useCloseAllModals()` | `state.closeAll` | 전체 모달 닫기 |
+
+세 훅 모두 **액션 함수만 구독**하므로 모달 목록 변화에 리렌더링이 발생하지 않습니다.
+
+```tsx
+// 직접 셀렉터를 사용해도 동일
+const open  = useModalStore((state) => state.open);
+const close = useModalStore((state) => state.close);
+```
+
+---
+
+### 10-4. 리렌더링 방지 원칙
+
+```tsx
+// ❌ 스토어 전체 구독 — modals 배열이 바뀔 때마다 리렌더링
+const { open } = useModalStore();
+
+// ✅ 액션만 셀렉터로 구독 — 리렌더링 없음
+const open = useOpenModal();
+// 또는
+const open = useModalStore((state) => state.open);
+```
+
+`GlobalModal` 컴포넌트만 `modals` 배열 전체를 구독합니다. 이것은 의도된 설계입니다.
+
+---
+
+### 10-5. 새 모달 추가 방법
+
+**1단계 — 모달 컴포넌트 작성**
+
+```tsx
+// src/components/modals/AlertModal.tsx
+export interface AlertModalProps {
+  title: string;
+  message: string;
+  onClose?: () => void; // GlobalModal 이 주입 — 호출 측에서 넘기지 않아도 됩니다
+}
+
+export function AlertModal({ title, message, onClose }: AlertModalProps) {
+  return (
+    <div style={{ backgroundColor: 'white', borderRadius: '1.6rem', padding: '3.2rem', width: '38rem' }}>
+      <Text size="t2">{title}</Text>
+      <Spacing size={12} />
+      <Text size="b1" color="secondary">{message}</Text>
+      <Spacing size={24} />
+      <Button onClick={onClose}>확인</Button>
+    </div>
+  );
+}
+```
+
+**2단계 — registry.ts 에 등록**
+
+```ts
+// src/components/modals/registry.ts
+
+import { AlertModal } from './AlertModal';
+import type { AlertModalProps } from './AlertModal';
+
+export type ModalRegistry = {
+  confirm: Omit<ConfirmModalProps, 'onClose'>;
+  alert:   Omit<AlertModalProps,   'onClose'>;  // ← 추가
+};
+
+export const MODAL_COMPONENTS = {
+  confirm: ConfirmModal,
+  alert:   AlertModal,    // ← 추가
+} satisfies Record<keyof ModalRegistry, ComponentType<{ onClose?: () => void }>>;
+```
+
+**3단계 — 사용**
+
+```tsx
+const openModal = useOpenModal();
+
+openModal('alert', {
+  title: '저장 완료',
+  message: '프로필이 저장되었습니다.',
+});
+```
+
+> `registry.ts`에 타입과 컴포넌트를 등록하지 않으면 `openModal('alert', ...)` 호출 시 **컴파일 오류**가 발생합니다.
+
+---
+
+### 10-6. 타입 안전성 보장
+
+잘못된 사용은 런타임이 아닌 **컴파일 타임**에 오류로 잡힙니다.
+
+```tsx
+// ❌ 존재하지 않는 모달 id → TS 오류
+openModal('unknown', { ... });
+
+// ❌ 잘못된 props 타입 → TS 오류
+openModal('confirm', { userId: '123' });
+
+// ✅ 올바른 사용
+openModal('confirm', {
+  title: '삭제',
+  message: '삭제하시겠습니까?',
+  onConfirm: handleDelete,
+});
+```
+
+---
+
 ## 내가 추가한 것 (원본 대비 개선 사항)
 
 | 항목                                           | 이유                                                                 |
@@ -474,6 +675,10 @@ export type AssetKey = keyof typeof ASSETS;
 | `Button`에 `ghost` variant 추가                | 테두리만 있는 버튼이 실무에서 자주 필요                              |
 | 아이콘별 개별 파일 분리                        | 트리 셰이킹 최적화. 쓰지 않는 아이콘은 번들에 포함되지 않음          |
 | `aria-*` 접근성 속성                           | 스크린 리더 지원. 처음부터 접근성을 챙기는 것이 리팩터링 비용을 줄임 |
+| `Overlay` Portal 컴포넌트                      | ESC·배경클릭·스크롤 잠금 내장. 모달 외 바텀시트, 드로어 등에도 재사용 가능 |
+| Zustand 전역 모달 스택 (`useModalStore`)       | `useState` prop drilling 없이 어디서든 명령형으로 모달 호출 가능 |
+| `ModalRegistry` 타입 안전 설계                 | 존재하지 않는 id·잘못된 props는 컴파일 타임에 오류. 런타임 버그 사전 차단 |
+| `satisfies` 기반 컴포넌트 레지스트리           | 새 모달 추가 시 registry.ts 누락 여부를 컴파일러가 자동 검증 |
 
 ```
 

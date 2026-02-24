@@ -1,4 +1,8 @@
-import { Skeleton, Spinner } from '@/design-system';
+import { useState } from 'react';
+
+import { Button, Overlay, Skeleton, Spinner, Text } from '@/design-system';
+
+import { useOpenModal } from '@/store/useModalStore';
 
 import { PreviewBox, Row, Section } from '../ds-helpers';
 import { CheckIcon, ChevronDownIcon, CloseIcon, HeartIcon } from '@/design-system/icons';
@@ -201,6 +205,113 @@ export function ImageSection() {
   );
 }
 
+/* ─── Overlay ────────────────────────────────────────────────────── */
+
+function OverlaySection() {
+  const [basicOpen, setBasicOpen] = useState(false);
+  const [noCloseOpen, setNoCloseOpen] = useState(false);
+  const openModal = useOpenModal();
+
+  const handleGlobalConfirm = () => {
+    openModal('confirm', {
+      title: '예약을 취소하시겠어요?',
+      message: '취소된 예약은 복구할 수 없습니다. 정말로 취소하시겠습니까?',
+      confirmLabel: '예약 취소',
+      cancelLabel: '돌아가기',
+      variant: 'danger',
+      onConfirm: () => {
+        // 실제 앱에서는 API 호출 등의 작업 수행
+      },
+    });
+  };
+
+  return (
+    <Section
+      id="overlay"
+      title="Overlay / Modal"
+      description="Portal 기반 오버레이. ESC 키, 배경 클릭, 스크롤 잠금을 내장합니다. 전역 모달은 useOpenModal() 훅으로 어느 컴포넌트에서나 호출 가능합니다."
+    >
+      {/* 기본 Overlay */}
+      <PreviewBox label="Overlay — 기본 (배경 클릭 · ESC 로 닫기)">
+        <Button variant="primary" onClick={() => setBasicOpen(true)}>
+          Overlay 열기
+        </Button>
+        <Overlay isOpen={basicOpen} onClose={() => setBasicOpen(false)}>
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '1.6rem',
+              padding: '3.2rem',
+              width: '38rem',
+              maxWidth: 'calc(100vw - 3.2rem)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+            }}
+          >
+            <Text size="t2" as="h2">
+              Overlay 예시
+            </Text>
+            <div style={{ marginTop: '1.2rem', marginBottom: '2.4rem' }}>
+              <Text size="b1" color="secondary">
+                배경을 클릭하거나 ESC 키를 누르면 닫힙니다.
+              </Text>
+            </div>
+            <Button variant="primary" onClick={() => setBasicOpen(false)}>
+              닫기
+            </Button>
+          </div>
+        </Overlay>
+      </PreviewBox>
+
+      {/* closeOnOverlayClick 비활성화 */}
+      <PreviewBox label="closeOnOverlayClick={false} — 버튼으로만 닫기">
+        <Button variant="secondary" onClick={() => setNoCloseOpen(true)}>
+          Overlay 열기
+        </Button>
+        <Overlay
+          isOpen={noCloseOpen}
+          onClose={() => setNoCloseOpen(false)}
+          closeOnOverlayClick={false}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '1.6rem',
+              padding: '3.2rem',
+              width: '38rem',
+              maxWidth: 'calc(100vw - 3.2rem)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+            }}
+          >
+            <Text size="t2" as="h2">
+              배경 클릭 비활성화
+            </Text>
+            <div style={{ marginTop: '1.2rem', marginBottom: '2.4rem' }}>
+              <Text size="b1" color="secondary">
+                배경을 클릭해도 닫히지 않습니다. 버튼으로만 닫을 수 있습니다.
+              </Text>
+            </div>
+            <Button variant="primary" onClick={() => setNoCloseOpen(false)}>
+              확인
+            </Button>
+          </div>
+        </Overlay>
+      </PreviewBox>
+
+      {/* 전역 모달 — Zustand */}
+      <PreviewBox label="전역 모달 (Zustand) — useOpenModal() 로 어디서든 호출">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+          <Text size="caption" color="secondary">
+            open 액션만 셀렉터로 구독 → 모달 목록 변화에 이 컴포넌트는 리렌더링 없음
+          </Text>
+          <Button variant="danger" onClick={handleGlobalConfirm}>
+            예약 취소 모달 열기
+          </Button>
+        </div>
+      </PreviewBox>
+    </Section>
+  );
+}
+
 /* ─── Export ─────────────────────────────────────────────────────── */
 
 export function FeedbackSection() {
@@ -210,6 +321,7 @@ export function FeedbackSection() {
       <SkeletonSection />
       <IconSection />
       <ImageSection />
+      <OverlaySection />
     </>
   );
 }

@@ -68,6 +68,24 @@ export default {
         '3xl': '2.0rem', // 20px
         full: '999.9rem',
       },
+
+      /**
+       * Overlay / Modal 전용 애니메이션
+       */
+      keyframes: {
+        'overlay-in': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+        'modal-in': {
+          from: { opacity: '0', transform: 'scale(0.96) translateY(-6px)' },
+          to: { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
+      },
+      animation: {
+        'overlay-in': 'overlay-in 0.18s ease-out',
+        'modal-in': 'modal-in 0.22s ease-out',
+      },
     },
   },
   plugins: [],

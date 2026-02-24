@@ -10,6 +10,7 @@
 export { Badge } from './atoms/Badge';
 export { Button } from './atoms/Button';
 export { Checkbox } from './atoms/Checkbox';
+export { Overlay } from './atoms/Overlay';
 export { Skeleton } from './atoms/Skeleton';
 export { Spinner } from './atoms/Spinner';
 export { Text } from './atoms/Text';

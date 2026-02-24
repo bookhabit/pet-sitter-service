@@ -27,6 +27,7 @@ const NAV_GROUPS = [
   {
     group: 'Feedback',
     items: [
+      { id: 'overlay', label: 'Overlay / Modal' },
       { id: 'spinner', label: 'Spinner' },
       { id: 'skeleton', label: 'Skeleton' },
       { id: 'icons', label: 'Icons' },
