@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "icons:build": "npx svgr -d src/design-system/icons/components src/design-system/icons/assets --typescript --icon --no-prettier --jsx-runtime automatic",
+    "icons:build": "npx svgr --config-file .svgrrc.cjs -d src/design-system/icons/components src/design-system/icons/assets --no-prettier",
     "icons:format": "npx prettier --write src/design-system/icons/components",
     "icons:index": "node scripts/generate-icons.cjs",
     "icons": "npm run icons:build && npm run icons:format && npm run icons:index"

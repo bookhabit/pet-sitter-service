@@ -21,9 +21,6 @@ export { Flex } from './layouts/Flex';
 export { Grid } from './layouts/Grid';
 export { Spacing } from './layouts/Spacing';
 
-// Icons
-export { CheckIcon, ChevronDownIcon, CloseIcon } from './icons';
-
 // Tokens (타입 참조 용도)
 export type { PrimitiveColor, SemanticColor } from './tokens/colors';
 export type { SpacingToken } from './tokens/spacing';

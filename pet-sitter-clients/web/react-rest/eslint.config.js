@@ -10,7 +10,8 @@ import prettierConfig from 'eslint-config-prettier'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // src/design-system/icons/components/ 는 SVGR 자동 생성 파일 — 린트 제외
+  globalIgnores(['dist', 'src/design-system/icons/components/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

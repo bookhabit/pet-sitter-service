@@ -1,16 +1,30 @@
-import { CheckIcon, ChevronDownIcon, CloseIcon, Skeleton, Spinner } from '@/design-system';
+import { Skeleton, Spinner } from '@/design-system';
 
 import { PreviewBox, Row, Section } from '../ds-helpers';
+import { CheckIcon, ChevronDownIcon, CloseIcon, HeartIcon } from '@/design-system/icons';
+import { primitiveColors } from '@/design-system/tokens/colors';
 
 /* ─── Spinner ────────────────────────────────────────────────────── */
 
 function SpinnerSection() {
   return (
-    <Section id="spinner" title="Spinner" description="로딩 상태 표시. Button의 isLoading에서도 내부적으로 사용됩니다.">
+    <Section
+      id="spinner"
+      title="Spinner"
+      description="로딩 상태 표시. Button의 isLoading에서도 내부적으로 사용됩니다."
+    >
       <PreviewBox label="Sizes">
         <Row align="center">
           {([16, 24, 32, 48] as const).map((size) => (
-            <div key={size} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.8rem' }}>
+            <div
+              key={size}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.8rem',
+              }}
+            >
               <Spinner size={size} color="primary" />
               <span style={{ fontSize: '1.2rem', color: 'var(--grey600)' }}>{size}px</span>
             </div>
@@ -54,7 +68,14 @@ function SkeletonSection() {
     >
       <PreviewBox label="Shapes">
         <Row align="start">
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.8rem' }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.8rem',
+            }}
+          >
             <Skeleton width={48} height={48} rounded="full" />
             <span style={{ fontSize: '1.2rem', color: 'var(--grey600)' }}>Avatar</span>
           </div>
@@ -134,7 +155,7 @@ function IconSection() {
                 gap: '1.2rem',
               }}
             >
-              <IconComponent size={24} color="var(--grey900)" />
+              <IconComponent size={24} color={primitiveColors.blue500} />
               <span style={{ fontSize: '1.2rem', color: 'var(--grey600)', textAlign: 'center' }}>
                 {name}
               </span>
@@ -148,9 +169,14 @@ function IconSection() {
           {([12, 16, 20, 24, 32] as const).map((size) => (
             <div
               key={size}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.8rem' }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.8rem',
+              }}
             >
-              <CheckIcon size={size} color="var(--blue500)" />
+              <HeartIcon size={size} color={primitiveColors.blue500} />
               <span style={{ fontSize: '1.2rem', color: 'var(--grey600)' }}>{size}px</span>
             </div>
           ))}

@@ -22,13 +22,13 @@
 
 ### "한 번 만든 UI는 다시 만들지 않는다"
 
-| 원칙 | 설명 |
-|---|---|
-| **매직 넘버 제거** | `bg-[#3182f6]` 대신 `bg-primary` 사용. 브랜드 컬러 변경 시 CSS 변수 하나만 수정하면 전체 반영 |
-| **8px Grid 강제** | `m-7`, `p-9` 같은 임의의 spacing은 사용 불가. 허용값: `0 2 4 8 12 16 24 32 48 64` |
-| **Typography 세트** | 폰트 크기만 독립적으로 쓰지 않는다. 행간(line-height)이 항상 세트로 따라온다 |
-| **외부 margin 금지** | 컴포넌트는 스스로 외부 margin을 가지지 않는다. 간격은 `Spacing` 컴포넌트가 담당 |
-| **단일 import 경로** | 모든 컴포넌트는 `@/design-system`에서만 import한다 |
+| 원칙                 | 설명                                                                                          |
+| -------------------- | --------------------------------------------------------------------------------------------- |
+| **매직 넘버 제거**   | `bg-[#3182f6]` 대신 `bg-primary` 사용. 브랜드 컬러 변경 시 CSS 변수 하나만 수정하면 전체 반영 |
+| **8px Grid 강제**    | `m-7`, `p-9` 같은 임의의 spacing은 사용 불가. 허용값: `0 2 4 8 12 16 24 32 48 64`             |
+| **Typography 세트**  | 폰트 크기만 독립적으로 쓰지 않는다. 행간(line-height)이 항상 세트로 따라온다                  |
+| **외부 margin 금지** | 컴포넌트는 스스로 외부 margin을 가지지 않는다. 간격은 `Spacing` 컴포넌트가 담당               |
+| **단일 import 경로** | 모든 컴포넌트는 `@/design-system`에서만 import한다                                            |
 
 ---
 
@@ -88,16 +88,16 @@ import { Button } from '@/design-system/atoms/Button/Button';
 
 색상은 CSS 변수로 관리됩니다. `src/index.css`에 정의되어 있습니다.
 
-| CSS 변수 | 값 | Tailwind 클래스 | 사용 목적 |
-|---|---|---|---|
-| `--blue500` | `#3182f6` | `bg-primary`, `text-primary` | 브랜드 주색, 버튼, 링크 |
-| `--grey900` | `#191f28` | `text-text-primary` | 본문 텍스트 |
-| `--grey600` | `#4e5968` | `text-text-secondary` | 보조 텍스트, 플레이스홀더 |
-| `--grey200` | `#e5e8eb` | `bg-grey200`, `border-grey200` | 구분선, 비활성 테두리 |
-| `--grey100` | `#f2f4f6` | `bg-background` | 페이지 배경, secondary 버튼 |
-| `--green500` | `#12b76a` | `bg-success` | 성공 상태 |
-| `--orange400` | `#f79009` | `bg-warning` | 경고 상태 |
-| `--red500` | `#f04438` | `bg-danger`, `text-danger` | 에러, 위험 상태 |
+| CSS 변수      | 값        | Tailwind 클래스                | 사용 목적                   |
+| ------------- | --------- | ------------------------------ | --------------------------- |
+| `--blue500`   | `#3182f6` | `bg-primary`, `text-primary`   | 브랜드 주색, 버튼, 링크     |
+| `--grey900`   | `#191f28` | `text-text-primary`            | 본문 텍스트                 |
+| `--grey600`   | `#4e5968` | `text-text-secondary`          | 보조 텍스트, 플레이스홀더   |
+| `--grey200`   | `#e5e8eb` | `bg-grey200`, `border-grey200` | 구분선, 비활성 테두리       |
+| `--grey100`   | `#f2f4f6` | `bg-background`                | 페이지 배경, secondary 버튼 |
+| `--green500`  | `#12b76a` | `bg-success`                   | 성공 상태                   |
+| `--orange400` | `#f79009` | `bg-warning`                   | 경고 상태                   |
+| `--red500`    | `#f04438` | `bg-danger`, `text-danger`     | 에러, 위험 상태             |
 
 ```tsx
 // ✅ 올바른 색상 사용
@@ -114,13 +114,13 @@ import { Button } from '@/design-system/atoms/Button/Button';
 
 **`1rem = 10px`** 규칙으로 피그마 수치와 1:1 대응합니다.
 
-| 클래스 | 크기 | 행간 | 자간 | 자중 | 사용처 |
-|---|---|---|---|---|---|
-| `text-t1` | 24px | 1.3 | -0.02em | 700 | 페이지 제목 |
-| `text-t2` | 20px | 1.3 | -0.01em | 700 | 섹션 제목 |
-| `text-b1` | 16px | 1.5 | 0 | 400 | 본문 (기본값) |
-| `text-b2` | 14px | 1.5 | 0 | 400 | 보조 본문 |
-| `text-caption` | 12px | 1.5 | 0 | 400 | 캡션, 에러 메시지 |
+| 클래스         | 크기 | 행간 | 자간    | 자중 | 사용처            |
+| -------------- | ---- | ---- | ------- | ---- | ----------------- |
+| `text-t1`      | 24px | 1.3  | -0.02em | 700  | 페이지 제목       |
+| `text-t2`      | 20px | 1.3  | -0.01em | 700  | 섹션 제목         |
+| `text-b1`      | 16px | 1.5  | 0       | 400  | 본문 (기본값)     |
+| `text-b2`      | 14px | 1.5  | 0       | 400  | 보조 본문         |
+| `text-caption` | 12px | 1.5  | 0       | 400  | 캡션, 에러 메시지 |
 
 ```tsx
 // ✅ Typography 스케일 사용
@@ -136,11 +136,11 @@ import { Button } from '@/design-system/atoms/Button/Button';
 
 허용된 간격 값만 사용합니다. **피그마 수치 ÷ 10 = rem 값 = Tailwind 클래스**
 
-| px | Tailwind | rem |
-|---|---|---|
-| 2px | `p-2`, `m-2` | 0.2rem |
-| 4px | `p-4`, `m-4` | 0.4rem |
-| 8px | `p-8`, `m-8` | 0.8rem |
+| px   | Tailwind       | rem    |
+| ---- | -------------- | ------ |
+| 2px  | `p-2`, `m-2`   | 0.2rem |
+| 4px  | `p-4`, `m-4`   | 0.4rem |
+| 8px  | `p-8`, `m-8`   | 0.8rem |
 | 12px | `p-12`, `m-12` | 1.2rem |
 | 16px | `p-16`, `m-16` | 1.6rem |
 | 24px | `p-24`, `m-24` | 2.4rem |
@@ -150,15 +150,15 @@ import { Button } from '@/design-system/atoms/Button/Button';
 
 ### 4-4. Border Radius
 
-| Tailwind | 값 | 사용처 |
-|---|---|---|
-| `rounded-sm` | 2px | 뱃지, 태그 |
-| `rounded-md` | 4px | 소형 요소 |
-| `rounded-lg` | 8px | 카드, 기본 |
-| `rounded-xl` | 12px | 버튼 (md/lg), 입력 필드 |
-| `rounded-2xl` | 16px | 카드, 모달 |
-| `rounded-3xl` | 20px | 큰 카드 |
-| `rounded-full` | 999.9rem | 아바타, 원형 버튼 |
+| Tailwind       | 값       | 사용처                  |
+| -------------- | -------- | ----------------------- |
+| `rounded-sm`   | 2px      | 뱃지, 태그              |
+| `rounded-md`   | 4px      | 소형 요소               |
+| `rounded-lg`   | 8px      | 카드, 기본              |
+| `rounded-xl`   | 12px     | 버튼 (md/lg), 입력 필드 |
+| `rounded-2xl`  | 16px     | 카드, 모달              |
+| `rounded-3xl`  | 20px     | 큰 카드                 |
+| `rounded-full` | 999.9rem | 아바타, 원형 버튼       |
 
 ---
 
@@ -427,35 +427,14 @@ cn('px-16 px-24')  // → 'px-24' (나중 것이 우선)
 
 ## 8. 아이콘 추가 방법
 
-1. `src/design-system/icons/` 폴더에 `{Name}Icon.tsx` 파일 생성
+1. svg 파일 추가 (design-system/icons/assets/...Icon.svg)
+2. npm run icons 스크립트 실행
+3. 아이콘 컴포넌트 파일 생성 (design-system/icons/components)
+4. index.ts에서 export
+   export \* from './components/HeartIcon';
+5. 사용 예시
+   import { CheckIcon, ChevronDownIcon, CloseIcon } from '@/design-system/icons';
 
-```tsx
-// src/design-system/icons/StarIcon.tsx
-interface IconProps {
-  size?: number;
-  color?: string;
-  className?: string;
-}
-
-export function StarIcon({ size = 16, color = 'currentColor', className }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className}>
-      {/* SVG path */}
-    </svg>
-  );
-}
-```
-
-2. `src/design-system/icons/index.ts`에 re-export 추가
-
-```ts
-export { StarIcon } from './StarIcon';
-```
-
-3. `src/design-system/index.ts`에 export 추가
-
-```ts
-export { StarIcon } from './icons';
 ```
 
 ---
@@ -473,3 +452,4 @@ export { StarIcon } from './icons';
 | `Button`에 `ghost` variant 추가 | 테두리만 있는 버튼이 실무에서 자주 필요 |
 | 아이콘별 개별 파일 분리 | 트리 셰이킹 최적화. 쓰지 않는 아이콘은 번들에 포함되지 않음 |
 | `aria-*` 접근성 속성 | 스크린 리더 지원. 처음부터 접근성을 챙기는 것이 리팩터링 비용을 줄임 |
+```

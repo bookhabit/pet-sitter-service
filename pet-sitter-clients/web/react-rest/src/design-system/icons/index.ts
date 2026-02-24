@@ -1,7 +1,10 @@
-/**
- * 아이콘 시스템
- * 새 아이콘이 필요하면 개별 .tsx 파일을 만들고 여기서 re-export하세요.
- */
-export { CheckIcon } from './CheckIcon';
-export { ChevronDownIcon } from './ChevronDownIcon';
-export { CloseIcon } from './CloseIcon';
+// ⚠️ 자동 생성된 파일입니다. 수동으로 수정하지 마세요!
+// 생성일시: 2026-02-24 08:28:00
+// 재생성: npm run icons
+
+export * from './types';
+
+export * from './components/CheckIcon';
+export * from './components/ChevronDownIcon';
+export * from './components/CloseIcon';
+export * from './components/HeartIcon';
