@@ -6,12 +6,18 @@
   /* 1rem을 10px로 변환 (피그마 수치 1:1 대응을 위함) */
   font-size: 62.5%;
 
-  /* 디자인 시스템 Primitive Tokens 설정 */
+  /* 디자인 시스템 Primitive Tokens */
   --blue500: #3182f6;
   --grey900: #191f28;
   --grey600: #4e5968;
+  --grey200: #e5e8eb;
   --grey100: #f2f4f6;
   --white: #ffffff;
+
+  /* Status Colors */
+  --green500: #12b76a;
+  --orange400: #f79009;
+  --red500: #f04438;
 }
 
 @layer base {
