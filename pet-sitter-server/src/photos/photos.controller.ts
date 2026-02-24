@@ -15,6 +15,7 @@ import { PhotosService } from './photos.service';
 import { FileValidationPipe, FilesValidationPipe } from '../common/pipes/file-validation.pipe';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { User } from '@prisma/client';
+import { PhotoModel } from './models/photo.model';
 
 @ApiTags('Photos')
 @ApiBearerAuth('access-token')
@@ -35,7 +36,7 @@ export class PhotosController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: '업로드 완료 — Photo 배열 반환' })
+  @ApiResponse({ status: 201, description: '업로드 완료 — Photo 배열 반환', type: [PhotoModel] })
   uploadMany(
     @UploadedFiles(new FilesValidationPipe()) files: Express.Multer.File[],
     @CurrentUser() user: User,
@@ -55,7 +56,7 @@ export class PhotosController {
       properties: { file: { type: 'string', format: 'binary' } },
     },
   })
-  @ApiResponse({ status: 201, description: '업로드 완료' })
+  @ApiResponse({ status: 201, description: '업로드 완료', type: PhotoModel })
   uploadUserPhoto(
     @Param('id') userId: string,
     @UploadedFile(new FileValidationPipe()) file: Express.Multer.File,
@@ -76,7 +77,7 @@ export class PhotosController {
       properties: { file: { type: 'string', format: 'binary' } },
     },
   })
-  @ApiResponse({ status: 201, description: '업로드 완료' })
+  @ApiResponse({ status: 201, description: '업로드 완료', type: PhotoModel })
   uploadJobPhoto(
     @Param('id') jobId: string,
     @UploadedFile(new FileValidationPipe()) file: Express.Multer.File,
@@ -97,7 +98,7 @@ export class PhotosController {
       properties: { file: { type: 'string', format: 'binary' } },
     },
   })
-  @ApiResponse({ status: 201, description: '업로드 완료' })
+  @ApiResponse({ status: 201, description: '업로드 완료', type: PhotoModel })
   uploadPetPhoto(
     @Param('id') petId: string,
     @UploadedFile(new FileValidationPipe()) file: Express.Multer.File,

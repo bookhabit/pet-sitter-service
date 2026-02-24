@@ -15,6 +15,8 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import type { User } from '@prisma/client';
+import { ToggleFavoriteResult } from './models/toggle-favorite-result.model';
+import { JobModel } from '../jobs/models/job.model';
 
 @ApiTags('Favorites')
 @ApiBearerAuth('access-token')
@@ -25,7 +27,7 @@ export class FavoritesController {
     @Post('favorites')
     @Roles(Role.PetSitter)
     @ApiOperation({ summary: '즐겨찾기 토글 (PetSitter 전용) — 없으면 추가, 있으면 제거' })
-    @ApiResponse({ status: 201, description: '{ added: true|false }' })
+    @ApiResponse({ status: 201, description: '즐겨찾기 추가/제거 결과', type: ToggleFavoriteResult })
     @ApiResponse({ status: 403, description: 'PetSitter 권한 필요' })
     toggle(@Body() dto: ToggleFavoriteDto, @CurrentUser() user: User) {
         return this.favoritesService.toggle(user.id, dto.job_id);
@@ -34,7 +36,7 @@ export class FavoritesController {
     @Get('favorites')
     @Roles(Role.PetSitter)
     @ApiOperation({ summary: '내 즐겨찾기 목록 조회 (PetSitter 전용)' })
-    @ApiResponse({ status: 200, description: 'OK' })
+    @ApiResponse({ status: 200, description: 'OK', type: [JobModel] })
     @ApiResponse({ status: 403, description: 'PetSitter 권한 필요' })
     findAll(@CurrentUser() user: User) {
         return this.favoritesService.findByUser(user.id);

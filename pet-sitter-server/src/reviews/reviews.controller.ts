@@ -14,6 +14,7 @@ import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { User } from '@prisma/client';
+import { ReviewModel } from './models/review.model';
 
 @ApiTags('Reviews')
 @ApiBearerAuth('access-token')
@@ -24,7 +25,7 @@ export class ReviewsController {
   @Post('jobs/:jobId/reviews')
   @ApiOperation({ summary: '리뷰 작성 (공고 등록자만 가능)' })
   @ApiParam({ name: 'jobId', description: '공고 UUID' })
-  @ApiResponse({ status: 201, description: '리뷰 작성 완료' })
+  @ApiResponse({ status: 201, description: '리뷰 작성 완료', type: ReviewModel })
   @ApiResponse({ status: 400, description: '승인된 지원자 없음' })
   @ApiResponse({ status: 403, description: '공고 등록자 아님' })
   @ApiResponse({ status: 409, description: '이미 리뷰 작성됨' })
@@ -40,7 +41,7 @@ export class ReviewsController {
   @ApiOperation({ summary: '펫시터 리뷰 목록 조회' })
   @ApiParam({ name: 'userId', description: '펫시터 UUID' })
   @ApiQuery({ name: 'sort', required: false, description: 'createdAt:desc | rating:desc', example: 'rating:desc' })
-  @ApiResponse({ status: 200, description: 'OK' })
+  @ApiResponse({ status: 200, description: 'OK', type: [ReviewModel] })
   findByUser(
     @Param('userId') userId: string,
     @Query('sort') sort?: string,

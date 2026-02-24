@@ -5,6 +5,7 @@ import { UpdateJobApplicationDto } from './dto/update-job-application.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import type { User, JobApplication } from '@prisma/client';
+import { JobApplicationModel } from './models/job-application.model';
 
 @ApiTags('JobApplications')
 @ApiBearerAuth('access-token')
@@ -16,7 +17,7 @@ export class JobApplicationByJobController {
     @Roles('PetSitter')
     @ApiOperation({ summary: '구인공고 지원 (PetSitter 전용)' })
     @ApiParam({ name: 'jobId', description: '공고 UUID' })
-    @ApiResponse({ status: 201, description: '지원 완료' })
+    @ApiResponse({ status: 201, description: '지원 완료', type: JobApplicationModel })
     @ApiResponse({ status: 403, description: 'PetSitter 권한 필요' })
     @ApiResponse({ status: 409, description: '이미 지원한 공고' })
     create(
@@ -29,7 +30,7 @@ export class JobApplicationByJobController {
     @Get()
     @ApiOperation({ summary: '공고별 지원 목록 조회' })
     @ApiParam({ name: 'jobId', description: '공고 UUID' })
-    @ApiResponse({ status: 200, description: 'OK' })
+    @ApiResponse({ status: 200, description: 'OK', type: [JobApplicationModel] })
     findAllByJob(@Param('jobId') jobId: string): Promise<{ items: JobApplication[] }> {
         return this.jobApplicationService.findAllByJobId(jobId);
     }
@@ -44,7 +45,7 @@ export class JobApplicationController {
     @Put(':jobApplicationId')
     @ApiOperation({ summary: '지원 상태 수정 (승인/거절) — 공고 작성자만 가능' })
     @ApiParam({ name: 'jobApplicationId', description: '지원서 UUID' })
-    @ApiResponse({ status: 200, description: 'OK' })
+    @ApiResponse({ status: 200, description: 'OK', type: JobApplicationModel })
     @ApiResponse({ status: 403, description: '수정 권한 없음' })
     @ApiResponse({ status: 404, description: '지원서를 찾을 수 없음' })
     update(

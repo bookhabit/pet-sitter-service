@@ -10,6 +10,8 @@ import { ChatService } from './chat.service';
 import { GetMessagesQueryDto } from './dto/get-messages-query.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { User } from '@prisma/client';
+import { ChatRoomModel } from './models/chat-room.model';
+import { PaginatedMessages } from './models/paginated-messages.model';
 
 @ApiTags('Chat')
 @ApiBearerAuth('access-token')
@@ -19,7 +21,7 @@ export class ChatController {
 
   @Get()
   @ApiOperation({ summary: '내 채팅방 목록 (최근 메시지 + 안읽은 수 포함)' })
-  @ApiResponse({ status: 200, description: 'OK' })
+  @ApiResponse({ status: 200, description: 'OK', type: [ChatRoomModel] })
   findMyChatRooms(@CurrentUser() user: User) {
     return this.chatService.findMyChatRooms(user.id);
   }
@@ -27,7 +29,7 @@ export class ChatController {
   @Get(':id/messages')
   @ApiOperation({ summary: '메시지 히스토리 (커서 기반 페이지네이션)' })
   @ApiParam({ name: 'id', description: '채팅방 UUID' })
-  @ApiResponse({ status: 200, description: 'OK' })
+  @ApiResponse({ status: 200, description: 'OK', type: PaginatedMessages })
   @ApiResponse({ status: 403, description: '채팅방 접근 권한 없음' })
   findMessages(
     @Param('id') chatRoomId: string,
