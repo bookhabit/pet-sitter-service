@@ -8,10 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "icons:pre": "node scripts/preprocess-svg.cjs",
     "icons:build": "npx svgr --config-file .svgrrc.cjs -d src/design-system/icons/components src/design-system/icons/assets --no-prettier",
     "icons:format": "npx prettier --write src/design-system/icons/components",
     "icons:index": "node scripts/generate-icons.cjs",
-    "icons": "npm run icons:build && npm run icons:format && npm run icons:index"
+    "icons": "npm run icons:pre && npm run icons:build && npm run icons:format && npm run icons:index"
   },
   "dependencies": {
     "clsx": "^2.1.1",

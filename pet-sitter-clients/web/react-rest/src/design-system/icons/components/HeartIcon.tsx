@@ -12,8 +12,8 @@ export function HeartIcon({ size = 24, color = 'currentColor', className, ...pro
     >
       <g clipPath="url(#HeartIcon_svg__a)">
         <path
-          fill="#FB2C36"
-          stroke="#FB2C36"
+          fill={color}
+          stroke={color}
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth={1.667}

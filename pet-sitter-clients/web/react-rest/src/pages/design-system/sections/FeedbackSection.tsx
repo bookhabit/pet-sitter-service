@@ -176,7 +176,7 @@ function IconSection() {
                 gap: '0.8rem',
               }}
             >
-              <HeartIcon size={size} color={primitiveColors.blue500} />
+              <HeartIcon size={size} color={primitiveColors.green500} />
               <span style={{ fontSize: '1.2rem', color: 'var(--grey600)' }}>{size}px</span>
             </div>
           ))}
