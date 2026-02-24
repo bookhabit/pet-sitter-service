@@ -3,6 +3,8 @@ import { Skeleton, Spinner } from '@/design-system';
 import { PreviewBox, Row, Section } from '../ds-helpers';
 import { CheckIcon, ChevronDownIcon, CloseIcon, HeartIcon } from '@/design-system/icons';
 import { primitiveColors } from '@/design-system/tokens/colors';
+import { Image } from '@/design-system/atoms/Image/Image';
+import { ASSETS } from '@/design-system/images';
 
 /* ─── Spinner ────────────────────────────────────────────────────── */
 
@@ -186,6 +188,19 @@ function IconSection() {
   );
 }
 
+export function ImageSection() {
+  return (
+    <Section
+      id="icons"
+      title="Icons"
+      description="SVG 기반 아이콘 컴포넌트. size / color / className 설정 가능합니다."
+    >
+      <Image src={ASSETS.DOG} />
+      <Image src={'https://abcd'} />
+    </Section>
+  );
+}
+
 /* ─── Export ─────────────────────────────────────────────────────── */
 
 export function FeedbackSection() {
@@ -194,6 +209,7 @@ export function FeedbackSection() {
       <SpinnerSection />
       <SkeletonSection />
       <IconSection />
+      <ImageSection />
     </>
   );
 }

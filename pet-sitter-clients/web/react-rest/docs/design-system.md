@@ -15,6 +15,7 @@
 6. [레이아웃 규칙](#6-레이아웃-규칙)
 7. [컴포넌트 작성 규칙](#7-컴포넌트-작성-규칙)
 8. [아이콘 추가 방법](#8-아이콘-추가-방법)
+9. [이미지 추가 방법](#9-이미지-추가-방법)
 
 ---
 
@@ -435,21 +436,45 @@ cn('px-16 px-24')  // → 'px-24' (나중 것이 우선)
 5. 사용 예시
    import { CheckIcon, ChevronDownIcon, CloseIcon } from '@/design-system/icons';
 
+---
+
+## 9. 이미지 추가 방법
+
+1. png, jpg,webp 파일 추가 (design-system/images/assets/...DOG.png)
+2. npm run assets 스크립트 실행
+3. 이미지 경로 상수값 - 정적 파일 생성 (design-system/images/assets/index)
+4. index.ts에서
+
+```
+// ⚠️ 자동 생성된 파일입니다. 수동으로 수정하지 마세요.
+import DEFAULT_THUMB from './assets/default-thumb.png';
+import DOG from './assets/dog.png';
+
+export const ASSETS = {
+  DEFAULT_THUMB,
+  DOG,
+} as const;
+
+export type AssetKey = keyof typeof ASSETS;
 ```
 
----
+5. 사용 예시
+   <Image src={ASSETS.DOG} />
 
 ## 내가 추가한 것 (원본 대비 개선 사항)
 
-| 항목 | 이유 |
-|---|---|
-| `cn()` 유틸 (`clsx` + `tailwind-merge`) | 조건부 클래스와 충돌 해소를 한 번에 처리. shadcn/ui 표준 패턴 |
-| `Spinner` 독립 컴포넌트 | Button의 isLoading 외에도 페이지 로딩 등 재사용 가능 |
-| `Divider` 레이아웃 | 수평/수직 구분선 표준화. HR 태그를 직접 쓰면 스타일 불일치 발생 |
-| Status Colors (`success`, `warning`, `danger`) | Badge, TextField 에러, 알림 등에 필요한 시맨틱 컬러 추가 |
-| `grey200` Primitive Token | Skeleton, 비활성 테두리 등에 grey100과 grey600 사이 값이 필요 |
-| `TextField`에 `hint` prop 추가 | 에러가 없을 때 사용자 가이드 문구를 표시하는 UX 패턴 |
-| `Button`에 `ghost` variant 추가 | 테두리만 있는 버튼이 실무에서 자주 필요 |
-| 아이콘별 개별 파일 분리 | 트리 셰이킹 최적화. 쓰지 않는 아이콘은 번들에 포함되지 않음 |
-| `aria-*` 접근성 속성 | 스크린 리더 지원. 처음부터 접근성을 챙기는 것이 리팩터링 비용을 줄임 |
+| 항목                                           | 이유                                                                 |
+| ---------------------------------------------- | -------------------------------------------------------------------- |
+| `cn()` 유틸 (`clsx` + `tailwind-merge`)        | 조건부 클래스와 충돌 해소를 한 번에 처리. shadcn/ui 표준 패턴        |
+| `Spinner` 독립 컴포넌트                        | Button의 isLoading 외에도 페이지 로딩 등 재사용 가능                 |
+| `Divider` 레이아웃                             | 수평/수직 구분선 표준화. HR 태그를 직접 쓰면 스타일 불일치 발생      |
+| Status Colors (`success`, `warning`, `danger`) | Badge, TextField 에러, 알림 등에 필요한 시맨틱 컬러 추가             |
+| `grey200` Primitive Token                      | Skeleton, 비활성 테두리 등에 grey100과 grey600 사이 값이 필요        |
+| `TextField`에 `hint` prop 추가                 | 에러가 없을 때 사용자 가이드 문구를 표시하는 UX 패턴                 |
+| `Button`에 `ghost` variant 추가                | 테두리만 있는 버튼이 실무에서 자주 필요                              |
+| 아이콘별 개별 파일 분리                        | 트리 셰이킹 최적화. 쓰지 않는 아이콘은 번들에 포함되지 않음          |
+| `aria-*` 접근성 속성                           | 스크린 리더 지원. 처음부터 접근성을 챙기는 것이 리팩터링 비용을 줄임 |
+
+```
+
 ```
