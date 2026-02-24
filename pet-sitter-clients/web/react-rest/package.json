@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "icons:build": "npx svgr -d src/design-system/icons/components src/design-system/icons/assets --typescript --icon --no-prettier --jsx-runtime automatic",
+    "icons:format": "npx prettier --write src/design-system/icons/components",
+    "icons:index": "node scripts/generate-icons.cjs",
+    "icons": "npm run icons:build && npm run icons:format && npm run icons:index"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -18,6 +22,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@svgr/cli": "^8.1.0",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
