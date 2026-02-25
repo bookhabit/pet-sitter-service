@@ -137,10 +137,11 @@ export const http = {
 // 8. Orval용 커스텀 인스턴스 (선택 사항)
 export const customInstance = <T>(
   config: AxiosRequestConfig,
-  options?: { schema?: z.ZodSchema },
+  options?: { schema?: z.ZodSchema }, // Orval의 두 번째 인자로 전달됨
 ): Promise<T> => {
-  // Orval은 주로 private한 API를 호출하므로 privateApi 기반으로 동작
-  return privateApi(config).then((res) =>
-    validateResponse(res as AxiosResponse<T>, options?.schema),
-  );
+  // privateApi를 사용하므로 401 토큰 갱신 인터셉터가 자동으로 돌아갑니다.
+  return privateApi({
+    ...config,
+    ...options, // 추가적인 axios 설정이나 커스텀 옵션 병합
+  }).then((res) => validateResponse(res as AxiosResponse<T>, options?.schema));
 };

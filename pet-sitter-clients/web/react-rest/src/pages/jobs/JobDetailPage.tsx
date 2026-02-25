@@ -1,11 +1,26 @@
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { useAuthStore } from '@/store/useAuthStore';
+import {
+  getJobsControllerFindOneQueryOptions,
+  useJobsControllerFindOne,
+} from '@/api/generated/jobs/jobs';
 
 export function JobDetailPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
+
+  if (!jobId) {
+    return (
+      <>
+        <h1>Invalid Job ID</h1>
+      </>
+    );
+  }
+
+  const { data, isLoading, isError } = useJobsControllerFindOne(jobId);
+  console.log('JobDetailPage - data:', data);
 
   return (
     <div style={{ padding: '2.4rem', maxWidth: '60rem', margin: '0 auto' }}>
