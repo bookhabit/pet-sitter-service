@@ -29,7 +29,7 @@ export class UsersResolver {
 
   @Mutation(() => AuthPayload, { description: '로그인' })
   @Public()
-  async login(@Args('data') data: LoginInput): Promise<{ user_id: string; auth_header: string }> {
+  async login(@Args('data') data: LoginInput) {
     return this.sessionsService.login(data);
   }
 

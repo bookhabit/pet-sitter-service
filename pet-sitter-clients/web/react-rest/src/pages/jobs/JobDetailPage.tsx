@@ -38,14 +38,14 @@ export function JobDetailPage() {
         }}
       >
         <p style={{ fontSize: '1.4rem', color: 'var(--grey500)', marginBottom: '0.8rem' }}>
-          현재 역할: <strong>{user?.role}</strong>
+          현재 역할: <strong>{user?.roles.join(', ')}</strong>
         </p>
         <p style={{ fontSize: '1.4rem', color: 'var(--grey500)' }}>
           [Prototype] 역할에 따라 다른 UI 표시 예정
         </p>
       </div>
 
-      {user?.role === 'PetSitter' && (
+      {user?.roles.includes('PetSitter') && (
         <button
           style={{
             width: '100%',
@@ -63,7 +63,7 @@ export function JobDetailPage() {
         </button>
       )}
 
-      {user?.role === 'PetOwner' && (
+      {user?.roles.includes('PetOwner') && (
         <button
           style={{
             width: '100%',

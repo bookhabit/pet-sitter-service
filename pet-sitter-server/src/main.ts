@@ -8,6 +8,12 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // CORS: React 개발 서버 허용
+  app.enableCors({
+    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    credentials: true,
+  });
+
   // 업로드 파일 정적 서빙
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 

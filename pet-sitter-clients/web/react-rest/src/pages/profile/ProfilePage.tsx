@@ -6,7 +6,7 @@ export function ProfilePage() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
 
   const isMe = userId === 'me' || userId === user?.id;
 
@@ -28,9 +28,11 @@ export function ProfilePage() {
         {isMe && user ? (
           <>
             <p style={{ fontSize: '1.8rem', fontWeight: 600, marginBottom: '0.4rem' }}>
-              {user.name}
+              {user.full_name}
             </p>
-            <p style={{ fontSize: '1.4rem', color: 'var(--grey500)' }}>역할: {user.role}</p>
+            <p style={{ fontSize: '1.4rem', color: 'var(--grey500)' }}>
+              역할: {user.roles.join(', ')}
+            </p>
           </>
         ) : (
           <p style={{ fontSize: '1.4rem', color: 'var(--grey500)' }}>
@@ -42,7 +44,7 @@ export function ProfilePage() {
       {isMe && (
         <button
           onClick={() => {
-            logout();
+            clearAuth();
             navigate('/login', { replace: true });
           }}
           style={{

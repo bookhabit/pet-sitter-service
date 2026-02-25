@@ -10,6 +10,15 @@ import { PrismaService } from '../../prisma/prisma.service';
 import * as jwt from 'jsonwebtoken';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
+const ACCESS_SECRET =
+  process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'access-secret-key';
+
+interface AccessTokenPayload {
+  userId: string;
+  email: string;
+  type: 'access';
+}
+
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
@@ -18,14 +27,13 @@ export class JwtAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Public 데코레이터가 있는 경우 인증 건너뛰기
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
     if (isPublic) {
-      return true; // 토큰 검증 스킵
+      return true;
     }
 
     const request = this.getRequest(context);
@@ -35,56 +43,47 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Authorization header is missing');
     }
 
-    // "Bearer <token>" 형식에서 토큰 추출
     const token = authHeader.replace('Bearer ', '');
 
     if (!token) {
       throw new UnauthorizedException('Token is missing');
     }
 
+    // accessToken 검증
+    let decoded: AccessTokenPayload;
     try {
-      // JWT 토큰 검증
-      const decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET || 'default-secret-key',
-      ) as { userId: string; email: string };
-
-      // 사용자 조회
-      const user = await this.prisma.user.findUnique({
-        where: { id: decoded.userId },
-      });
-
-      if (!user) {
-        throw new UnauthorizedException('User not found');
-      }
-
-      // 세션이 존재하는지 확인 (선택사항)
-      const session = await this.prisma.session.findFirst({
-        where: {
-          user_id: user.id,
-          auth_header: authHeader,
-        },
-        orderBy: {
-          updatedAt: 'desc',
-        },
-      });
-
-      if (!session) {
-        throw new UnauthorizedException('Session not found');
-      }
-
-      // 요청 객체에 사용자 정보 추가
-      request.user = user;
-      return true;
+      decoded = jwt.verify(token, ACCESS_SECRET) as AccessTokenPayload;
     } catch (error) {
-      if (error instanceof jwt.JsonWebTokenError) {
-        throw new UnauthorizedException('Invalid token');
-      }
       if (error instanceof jwt.TokenExpiredError) {
-        throw new UnauthorizedException('Token expired');
+        throw new UnauthorizedException('Access token expired');
       }
-      throw error;
+      throw new UnauthorizedException('Invalid access token');
     }
+
+    if (decoded.type !== 'access') {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    // 사용자 조회
+    const user = await this.prisma.user.findUnique({
+      where: { id: decoded.userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // 세션 존재 여부 확인 (로그아웃 여부 체크)
+    const session = await this.prisma.session.findUnique({
+      where: { user_id: user.id },
+    });
+
+    if (!session) {
+      throw new UnauthorizedException('Session not found — please log in again');
+    }
+
+    request.user = user;
+    return true;
   }
 
   private getRequest(context: ExecutionContext) {

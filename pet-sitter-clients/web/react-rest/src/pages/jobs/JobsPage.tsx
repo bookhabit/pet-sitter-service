@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 export function JobsPage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
 
   return (
     <div style={{ padding: '2.4rem', maxWidth: '60rem', margin: '0 auto' }}>
@@ -20,7 +20,7 @@ export function JobsPage() {
         <h1 style={{ fontSize: '2.4rem', fontWeight: 700 }}>구인공고 목록</h1>
         <button
           onClick={() => {
-            logout();
+            clearAuth();
             navigate('/login', { replace: true });
           }}
           style={{
@@ -37,7 +37,7 @@ export function JobsPage() {
         </button>
       </div>
 
-      {user?.role === 'PetOwner' && (
+      {user?.roles.includes('PetOwner') && (
         <button
           onClick={() => navigate('/jobs/write')}
           style={{

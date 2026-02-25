@@ -38,10 +38,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      const decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET || 'default-secret-key',
-      ) as { userId: string; email: string };
+      const ACCESS_SECRET =
+        process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'access-secret-key';
+
+      const decoded = jwt.verify(token, ACCESS_SECRET) as {
+        userId: string;
+        email: string;
+        type: string;
+      };
 
       const user = await this.prisma.user.findUnique({
         where: { id: decoded.userId },
@@ -53,11 +57,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      // 세션 확인
-      const authHeader = `Bearer ${token}`;
-      const session = await this.prisma.session.findFirst({
-        where: { user_id: user.id, auth_header: authHeader },
-        orderBy: { updatedAt: 'desc' },
+      // 세션 존재 여부 확인 (로그아웃 여부 체크)
+      const session = await this.prisma.session.findUnique({
+        where: { user_id: user.id },
       });
 
       if (!session) {

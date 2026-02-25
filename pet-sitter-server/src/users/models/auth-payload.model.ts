@@ -7,7 +7,11 @@ export class AuthPayload {
   @Field()
   user_id: string;
 
-  @ApiProperty({ example: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
+  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
   @Field()
-  auth_header: string;
+  accessToken: string;
+
+  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
+  @Field()
+  refreshToken: string;
 }
