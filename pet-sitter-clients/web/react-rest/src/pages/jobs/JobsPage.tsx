@@ -1,82 +1,49 @@
 import { useNavigate } from 'react-router-dom';
 
+import { JobListContainer } from '@/components/jobs/JobListContainer';
+import { Button, Flex, Spacing, Text } from '@/design-system';
+import { useLogoutMutation } from '@/hooks/auth';
 import { useAuthStore } from '@/store/useAuthStore';
 
+/**
+ * [Page] 구인공고 목록 페이지
+ *
+ * 레이아웃 배치와 페이지 헤더(로그아웃, 공고 등록) 연결만 담당합니다.
+ * 데이터 로직은 JobListContainer에 위임합니다.
+ */
 export function JobsPage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const { mutate: logout, isPending: isLoggingOut } = useLogoutMutation();
+
+  const isPetOwner = user?.roles.includes('PetOwner') ?? false;
 
   return (
-    <div style={{ padding: '2.4rem', maxWidth: '60rem', margin: '0 auto' }}>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '2.4rem',
-        }}
-      >
-        <h1 style={{ fontSize: '2.4rem', fontWeight: 700 }}>구인공고 목록</h1>
-        <button
-          onClick={() => {
-            clearAuth();
-            navigate('/login', { replace: true });
-          }}
-          style={{
-            padding: '0.8rem 1.6rem',
-            background: 'none',
-            border: '1px solid var(--grey300)',
-            borderRadius: '0.8rem',
-            fontSize: '1.4rem',
-            cursor: 'pointer',
-            color: 'var(--grey600)',
-          }}
-        >
+    <div className="mx-auto max-w-[60rem] px-24 py-32">
+      {/* 헤더 */}
+      <Flex justify="between" align="center">
+        <Text as="h1" size="t1">
+          구인공고 목록
+        </Text>
+        <Button variant="ghost" size="sm" isLoading={isLoggingOut} onClick={() => logout()}>
           로그아웃
-        </button>
-      </div>
+        </Button>
+      </Flex>
 
-      {user?.roles.includes('PetOwner') && (
-        <button
-          onClick={() => navigate('/jobs/write')}
-          style={{
-            width: '100%',
-            padding: '1.6rem',
-            backgroundColor: 'var(--blue500)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '1.2rem',
-            fontSize: '1.6rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            marginBottom: '1.6rem',
-          }}
-        >
-          + 구인공고 등록
-        </button>
+      <Spacing size={16} />
+
+      {/* PetOwner 전용 공고 등록 버튼 */}
+      {isPetOwner && (
+        <>
+          <Button size="lg" className="w-full" onClick={() => navigate('/jobs/write')}>
+            + 구인공고 등록
+          </Button>
+          <Spacing size={16} />
+        </>
       )}
 
-      {/* Mock job cards */}
-      {['공고 #1 — 골든리트리버 돌봄', '공고 #2 — 코카스파니엘 산책', '공고 #3 — 고양이 급식'].map(
-        (title, i) => (
-          <div
-            key={i}
-            onClick={() => navigate(`/jobs/${i + 1}`)}
-            style={{
-              padding: '1.6rem',
-              backgroundColor: 'white',
-              borderRadius: '1.2rem',
-              border: '1px solid var(--grey200)',
-              marginBottom: '1.2rem',
-              cursor: 'pointer',
-            }}
-          >
-            <p style={{ fontSize: '1.6rem', fontWeight: 600, marginBottom: '0.4rem' }}>{title}</p>
-            <p style={{ fontSize: '1.4rem', color: 'var(--grey500)' }}>클릭하여 상세 보기</p>
-          </div>
-        ),
-      )}
+      {/* 구인공고 목록 */}
+      <JobListContainer />
     </div>
   );
 }

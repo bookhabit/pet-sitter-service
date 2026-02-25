@@ -249,7 +249,7 @@ src/
 
 이 규칙은 모든 신규 코드 작성 시 반드시 준수한다.
 
-# EXAMPLE
+# EXAMPLE 1 : form
 
 - 1. 스키마 및 타입 정의 (`src/schemas/authSchema.ts`)
      데이터의 구조와 검증 규칙을 한곳에서 관리합니다.
@@ -430,3 +430,108 @@ src/
     );
   }
   ```
+
+# EXAMPLE 2 : get list
+
+- 1. 스키마 정의 (`src/schemas/userSchema.ts`)
+  서버에서 오는 데이터가 우리가 기대한 형태인지 검증하고 타입을 추출합니다.
+  ```tsx
+  import { z } from 'zod';
+
+  // 단일 사용자 스키마
+  export const userSchema = z.object({
+    id: z.number(),
+    name: z.string(),
+    email: z.string().email(),
+    website: z.string().url(),
+  });
+
+  // 사용자 리스트 스키마 (배열)
+  export const userListSchema = z.array(userSchema);
+
+  export type User = z.infer<typeof userSchema>;
+  ```
+- 2. 서비스 레이어 (`src/services/userService.ts`)
+  순수하게 네트워크 요청과 데이터 검증만 수행합니다.
+  ```tsx
+  import { userListSchema, User } from '../schemas/userSchema';
+
+  export const userService = {
+    getUsers: async (): Promise<User[]> => {
+      const response = await fetch('https://jsonplaceholder.typicode.com/users');
+
+      if (!response.ok) throw new Error('데이터 로드 실패');
+
+      const data = await response.json();
+
+      // Zod를 사용하여 서버 응답 데이터가 스키마와 일치하는지 검증 (런타임 안정성)
+      return userListSchema.parse(data);
+    }
+  };
+  ```
+- 3. 서버 상태 관리 훅 (`src/hooks/queries/useUserQuery.ts`)
+  TanStack Query를 통해 캐싱, 로딩, 에러 상태를 래핑합니다.
+  ```tsx
+  import { useQuery } from '@tanstack/react-query';
+  import { userService } from '../../services/userService';
+
+  export function useUserQuery() {
+    return useQuery({
+      queryKey: ['users'], // 캐시 키
+      queryFn: userService.getUsers,
+      staleTime: 1000 * 60 * 5, // 5분 동안 데이터를 '신선'하다고 판단 (캐싱 최적화)
+    });
+  }
+  ```
+- 4. UI 컴포넌트 분리
+  데이터 로직을 처리하는 **Container**와 화면만 그리는 **Presenter**로 나눕니다.
+  - 데이터 로직을 처리하는 **Container**
+    [4-1] 비즈니스 로직 연결 (`src/components/user/UserListContainer.tsx`)
+    ```tsx
+    import { useUserQuery } from '../../hooks/queries/useUserQuery';
+    import { UserListView } from './UserListView';
+
+    export function UserListContainer() {
+      const { data: users, isLoading, isError, error, refetch } = useUserQuery();
+
+      // 로딩 상태 처리
+      if (isLoading) return <div className="spinner">데이터를 불러오는 중...</div>;
+
+      // 에러 상태 처리
+      if (isError) return (
+        <div className="error-box">
+          <p>에러 발생: {(error as Error).message}</p>
+          <button onClick={() => refetch()}>다시 시도</button>
+        </div>
+      );
+
+      // 성공 상태: 데이터 전송
+      return <UserListView users={users ?? []} />;
+    }
+    ```
+  - 화면만 그리는 **Presenter**
+    [4-2] 순수 UI 컴포넌트 (`src/components/user/UserListView.tsx`)
+    ```tsx
+    import { User } from '../../schemas/userSchema';
+
+    interface Props {
+      users: User[];
+    }
+
+    export function UserListView({ users }: Props) {
+      return (
+        <div className="user-list-wrapper">
+          <h2>사용자 목록 ({users.length}명)</h2>
+          <ul>
+            {users.map((user) => (
+              <li key={user.id} className="user-card">
+                <strong>{user.name}</strong>
+                <span>{user.email}</span>
+                <small>{user.website}</small>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+    ```

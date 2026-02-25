@@ -29,8 +29,15 @@ export class JobsController {
     @Get()
     @ApiOperation({ summary: '구인공고 목록 조회 (필터/페이지네이션)' })
     @ApiResponse({ status: 200, description: 'items 배열 + pageInfo 반환', type: PaginatedJobs })
-    findAll(@Query() query: SearchJobsQueryDto) {
-        return this.jobsService.findAll(query);
+    async findAll(@Query() query: SearchJobsQueryDto) {
+        const result = await this.jobsService.findAll(query);
+        return {
+            items: result.items,
+            pageInfo: {
+                hasNextPage: !!result.cursor,
+                endCursor: result.cursor ?? undefined,
+            },
+        };
     }
 
     @Get(':id')

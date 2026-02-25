@@ -104,8 +104,13 @@ privateApi.interceptors.response.use(
 // 6. 핵심: Zod 검증 통합 추출 함수
 const validateResponse = <T>(res: AxiosResponse<T>, schema?: z.ZodSchema): T => {
   if (schema) {
-    // schema.parse 는 unknown 을 반환하므로 T로 단언 (Zod 스키마가 T 형태를 보장)
-    return schema.parse(res.data) as T;
+    try {
+      return schema.parse(res.data) as T;
+    } catch (e) {
+      console.error('🔥 ZOD VALIDATION FAILED');
+      console.error('response data →', res.data);
+      console.error(e);
+    }
   }
   return res.data;
 };
