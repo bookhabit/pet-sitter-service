@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { randomUUID } from 'crypto';
 
@@ -94,10 +98,7 @@ export class ChatService {
     const chatRooms = await this.prisma.chatRoom.findMany({
       where: {
         jobApplication: {
-          OR: [
-            { user_id: userId },
-            { job: { creator_user_id: userId } },
-          ],
+          OR: [{ user_id: userId }, { job: { creator_user_id: userId } }],
         },
       },
       include: {
@@ -109,7 +110,7 @@ export class ChatService {
         },
         messages: {
           orderBy: { createdAt: 'desc' },
-          take: 1,
+          take: 1, // 마지막 메시지 1개만 포함 (미리보기 용도)
           include: { sender: true },
         },
         readReceipts: true,
