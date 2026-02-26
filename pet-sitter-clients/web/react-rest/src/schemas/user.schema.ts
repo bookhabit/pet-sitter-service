@@ -19,6 +19,8 @@ export const photoSchema = z.object({
   createdAt: z.coerce.date(),
 });
 
+export type Photo = z.infer<typeof photoSchema>;
+
 /* ─── UserModel (서버 응답) ─────────────────────────────────── */
 
 export const userSchema = z.object({
