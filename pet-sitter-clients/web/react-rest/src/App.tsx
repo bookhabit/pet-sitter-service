@@ -4,8 +4,9 @@ import { GlobalModal } from './components/GlobalModal';
 import { AuthGuard } from './guards/AuthGuard';
 import { GuestGuard } from './guards/GuestGuard';
 import { RoleGuard } from './guards/RoleGuard';
-import { MainLayout } from './layouts/MainLayout';
 import { AuthLayout } from './layouts/AuthLayout';
+import { MainLayout } from './layouts/MainLayout';
+
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
 import { ChatPage } from './pages/chat/ChatPage';
@@ -16,6 +17,7 @@ import { JobDetailPage } from './pages/jobs/JobDetailPage';
 import { JobsPage } from './pages/jobs/JobsPage';
 import { JobWritePage } from './pages/jobs/JobWritePage';
 import { ProfilePage } from './pages/profile/ProfilePage';
+import { PageAsyncBoundary } from './components/common/globalException/boundary';
 
 function App() {
   return (
@@ -27,33 +29,37 @@ function App() {
         {/* Public Routes — 미인증 사용자 전용 (로그인 사용자 접근 시 /jobs 로 리다이렉트) */}
         <Route element={<GuestGuard />}>
           <Route element={<AuthLayout />}>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+            <Route element={<PageAsyncBoundary />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+            </Route>
           </Route>
         </Route>
 
         {/* Protected Routes — 인증 사용자 전용 (미인증 접근 시 /login 으로 리다이렉트) */}
         <Route element={<AuthGuard />}>
           <Route element={<MainLayout />}>
-            {/* 홈 탭 */}
-            <Route path="/jobs" element={<JobsPage />} />
-            <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+            <Route element={<PageAsyncBoundary />}>
+              {/* 홈 탭 */}
+              <Route path="/jobs" element={<JobsPage />} />
+              <Route path="/jobs/:jobId" element={<JobDetailPage />} />
 
-            {/* 구인공고 등록 — PetOwner 전용 */}
-            <Route element={<RoleGuard allowedRoles={['PetOwner']} />}>
-              <Route path="/jobs/write" element={<JobWritePage />} />
+              {/* 구인공고 등록 — PetOwner 전용 */}
+              <Route element={<RoleGuard allowedRoles={['PetOwner']} />}>
+                <Route path="/jobs/write" element={<JobWritePage />} />
+              </Route>
+
+              {/* 채팅 탭 */}
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/chat/:roomId" element={<ChatRoomPage />} />
+
+              {/* 즐겨찾기 탭 */}
+              <Route path="/favorites" element={<FavoritesPage />} />
+
+              {/* 프로필 탭 */}
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/profile/:userId" element={<ProfilePage />} />
             </Route>
-
-            {/* 채팅 탭 */}
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/chat/:roomId" element={<ChatRoomPage />} />
-
-            {/* 즐겨찾기 탭 */}
-            <Route path="/favorites" element={<FavoritesPage />} />
-
-            {/* 프로필 탭 */}
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/profile/:userId" element={<ProfilePage />} />
           </Route>
         </Route>
 
