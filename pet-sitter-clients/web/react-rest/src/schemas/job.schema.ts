@@ -65,6 +65,38 @@ export const paginatedJobsSchema = z.object({
 
 export type PaginatedJobs = z.infer<typeof paginatedJobsSchema>;
 
+/* ─── Input DTOs ─────────────────────────────────────────────── */
+
+export const petInputSchema = z.object({
+  name: z.string().min(2).max(20),
+  age: z.number().int().min(1).max(100),
+  species: petSpeciesSchema,
+  breed: z.string(),
+  size: z.string().optional(),
+  photo_ids: z.array(z.string().uuid()).optional(),
+});
+
+export type PetInput = z.infer<typeof petInputSchema>;
+
+export const createJobSchema = z.object({
+  start_time: z.string(),
+  end_time: z.string(),
+  activity: z.string().min(5).max(500),
+  pets: z.array(petInputSchema).min(1).max(10),
+  photo_ids: z.array(z.string().uuid()).optional(),
+  address: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  price: z.number().int().min(0).optional(),
+  price_type: priceTypeSchema.optional(),
+});
+
+export type CreateJobInput = z.infer<typeof createJobSchema>;
+
+export const updateJobSchema = createJobSchema.partial();
+
+export type UpdateJobInput = z.infer<typeof updateJobSchema>;
+
 /* ─── Query Params ───────────────────────────────────────────── */
 
 export interface JobsQueryParams {
@@ -72,4 +104,13 @@ export interface JobsQueryParams {
   cursor?: string;
   activity?: string;
   sort?: string;
+  start_time_before?: string;
+  start_time_after?: string;
+  end_time_before?: string;
+  end_time_after?: string;
+  'pets[age_below]'?: number;
+  'pets[age_above]'?: number;
+  'pets[species]'?: string;
+  min_price?: number;
+  max_price?: number;
 }
