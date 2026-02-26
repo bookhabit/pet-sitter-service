@@ -1,5 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 
+import { useGlobalChatNotifications } from '@/hooks/chat';
+
 const NAV_TABS = [
   { to: '/jobs', label: '홈', emoji: '🏠' },
   { to: '/chat', label: '채팅', emoji: '💬' },
@@ -50,6 +52,8 @@ function BottomNav() {
 }
 
 export function MainLayout() {
+  useGlobalChatNotifications();
+
   return (
     <div
       style={{

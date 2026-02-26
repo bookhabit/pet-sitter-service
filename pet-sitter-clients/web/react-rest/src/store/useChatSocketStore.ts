@@ -3,7 +3,7 @@ import { create } from 'zustand';
 
 import { chatMessageSchema } from '../schemas/chat.schema';
 
-import type { ChatMessage, JoinedRoomPayload, MessagesReadPayload } from '../schemas/chat.schema';
+import type { ChatMessage, JoinedRoomPayload, MessagesReadPayload, NewMessageNotificationPayload } from '../schemas/chat.schema';
 
 const SOCKET_URL = 'http://localhost:8000/chat';
 
@@ -29,6 +29,9 @@ interface ChatSocketState {
 
   /** 읽음 상태: roomId → userId → lastReadAt */
   readReceipts: Record<string, Record<string, Date>>;
+
+  /** 채팅방 밖에서 받은 새 메시지 알림 roomId 목록 (채팅방 목록 갱신 트리거) */
+  pendingNotificationRoomIds: string[];
 }
 
 /* ─── Actions ────────────────────────────────────────────────── */
@@ -57,6 +60,9 @@ interface ChatSocketActions {
   appendMessage: (roomId: string, message: ChatMessage) => void;
   /** messagesRead 이벤트 수신 시 읽음 상태 갱신 */
   updateReadReceipt: (roomId: string, userId: string, lastReadAt: Date) => void;
+
+  /** 알림 처리 후 pendingNotificationRoomIds 초기화 */
+  clearPendingNotifications: () => void;
 }
 
 /* ─── Store ──────────────────────────────────────────────────── */
@@ -71,6 +77,7 @@ export const useChatSocketStore = create<ChatSocketState & ChatSocketActions>()(
   hasMore: {},
   isLoadingMore: {},
   readReceipts: {},
+  pendingNotificationRoomIds: [],
 
   connect: (token) => {
     const existing = get().socket;
@@ -106,6 +113,17 @@ export const useChatSocketStore = create<ChatSocketState & ChatSocketActions>()(
         payload.userId,
         new Date(payload.lastReadAt),
       );
+    });
+
+    socket.on('newMessageNotification', (payload: NewMessageNotificationPayload) => {
+      // 현재 채팅방이 아닌 경우에만 알림 등록 (채팅방 목록 갱신 트리거)
+      if (get().currentRoomId !== payload.chatRoomId) {
+        set((state) => ({
+          pendingNotificationRoomIds: Array.from(
+            new Set([...state.pendingNotificationRoomIds, payload.chatRoomId]),
+          ),
+        }));
+      }
     });
 
     socket.on('error', (err: { message: string }) => {
@@ -184,4 +202,6 @@ export const useChatSocketStore = create<ChatSocketState & ChatSocketActions>()(
       },
     }));
   },
+
+  clearPendingNotifications: () => set({ pendingNotificationRoomIds: [] }),
 }));

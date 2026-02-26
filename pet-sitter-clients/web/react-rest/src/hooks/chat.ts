@@ -1,5 +1,7 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+
+import { useAuthStore } from '@/store/useAuthStore';
 
 import { chatService } from '@/services/chat.service';
 import { useChatSocketStore } from '@/store/useChatSocketStore';
@@ -34,6 +36,33 @@ export function useRefreshChatRooms() {
   return useCallback(() => {
     queryClient.invalidateQueries({ queryKey: chatQueryKeys.rooms() });
   }, [queryClient]);
+}
+
+/* ─── Global Notification Sync ──────────────────────────────── */
+
+/**
+ * 레이아웃에 한 번 마운트.
+ * - 인증 상태에서 소켓 전역 연결 유지
+ * - 채팅방 밖에서 받은 newMessageNotification 시 채팅방 목록 갱신
+ */
+export function useGlobalChatNotifications() {
+  const queryClient = useQueryClient();
+  const token = useAuthStore((s) => s.token);
+  const { connect, pendingNotificationRoomIds, clearPendingNotifications } =
+    useChatSocketStore();
+
+  // 인증된 상태에서 소켓 전역 연결 (이미 연결돼 있으면 connect() 내부에서 early return)
+  useEffect(() => {
+    if (!token) return;
+    connect(token);
+  }, [token, connect]);
+
+  // 채팅방 밖 알림 수신 시 채팅방 목록 캐시 갱신
+  useEffect(() => {
+    if (pendingNotificationRoomIds.length === 0) return;
+    queryClient.invalidateQueries({ queryKey: chatQueryKeys.rooms() });
+    clearPendingNotifications();
+  }, [pendingNotificationRoomIds, queryClient, clearPendingNotifications]);
 }
 
 /* ─── Infinite Scroll (메시지 더 보기) ───────────────────────── */

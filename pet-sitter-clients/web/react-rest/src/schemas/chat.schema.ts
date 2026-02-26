@@ -60,3 +60,9 @@ export interface MessagesReadPayload {
   userId: string;
   lastReadAt: string; // ISO string from server
 }
+
+/** 채팅방 밖에 있을 때 수신하는 새 메시지 알림 */
+export interface NewMessageNotificationPayload {
+  chatRoomId: string;
+  message: ChatMessage;
+}

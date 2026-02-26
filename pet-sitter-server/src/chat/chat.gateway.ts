@@ -69,6 +69,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       client.data.user = user;
+      // 소켓 연결 즉시 유저 개인 룸 입장 — 채팅방 밖에서도 알림 수신 가능
+      client.join(`user:${user.id}`);
     } catch (error) {
       client.emit('error', { message: 'Authentication failed' });
       client.disconnect();
@@ -182,6 +184,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           chatRoomId: payload.chatRoomId,
           userId: recipientId,
           lastReadAt: recipientReadAt,
+        });
+      } else {
+        // 상대방이 채팅방 밖에 있으면 유저 개인 룸으로 알림 전송
+        this.server.to(`user:${recipientId}`).emit('newMessageNotification', {
+          chatRoomId: payload.chatRoomId,
+          message,
         });
       }
 
