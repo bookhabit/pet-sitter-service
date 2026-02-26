@@ -1,9 +1,13 @@
+import { Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { JobListContainer } from '@/components/jobs/JobListContainer';
+import { JobListErrorView } from '@/components/jobs/exception/JobListErrorView';
+import { JobListLoadingView } from '@/components/jobs/exception/JobListLoadingView';
 import { Button, Flex, Spacing, Text } from '@/design-system';
 import { useLogoutMutation } from '@/hooks/auth';
 import { useAuthStore } from '@/store/useAuthStore';
+import { QueryErrorBoundary } from '@/components/common/globalException/boundary';
 
 /**
  * [Page] 구인공고 목록 페이지
@@ -43,7 +47,11 @@ export function JobsPage() {
       )}
 
       {/* 구인공고 목록 */}
-      <JobListContainer />
+      <QueryErrorBoundary fallback={JobListErrorView}>
+        <Suspense fallback={<JobListLoadingView />}>
+          <JobListContainer />
+        </Suspense>
+      </QueryErrorBoundary>
     </div>
   );
 }

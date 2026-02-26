@@ -74,6 +74,7 @@ privateApi.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        console.log('Access token expired. Attempting to refresh...');
         const refreshToken = useAuthStore.getState().refreshToken;
         // 토큰 갱신 API 호출
         const res = await publicApi.post('/sessions/refresh', { refreshToken });

@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 
 import { jobService } from '@/services/job.service';
 
@@ -15,7 +15,7 @@ export const jobQueryKeys = {
  * pageParam = endCursor (서버 응답의 pageInfo.endCursor)
  */
 export function useJobsQuery(params?: Omit<JobsQueryParams, 'cursor'>) {
-  return useInfiniteQuery({
+  return useSuspenseInfiniteQuery({
     queryKey: jobQueryKeys.list(params),
     queryFn: ({ pageParam }) => jobService.getJobs({ ...params, cursor: pageParam }),
     initialPageParam: undefined as string | undefined,
