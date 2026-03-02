@@ -5,7 +5,9 @@ import {
     IsArray,
     IsEnum,
     MaxLength,
-    MinLength
+    MinLength,
+    ArrayMinSize,
+    Matches
   } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -18,6 +20,7 @@ export class CreateUserDto {
     @IsString({ message: 'full_name must be a string' })
     @MinLength(2, { message: 'full_name must be at least 2 characters long' })
     @MaxLength(50, { message: 'full_name must not exceed 50 characters' })
+    @Matches(/^[^\d]+$/, { message: 'full_name must not contain numbers' })
     full_name: string;
 
     @ApiProperty({ example: 'password123', minLength: 8, description: '비밀번호 (최소 8자)' })
@@ -27,6 +30,7 @@ export class CreateUserDto {
 
     @ApiProperty({ enum: Role, isArray: true, example: [Role.PetOwner], description: '역할 목록 (PetOwner, PetSitter, Admin)' })
     @IsArray({ message: 'roles must be an array' })
+    @ArrayMinSize(1, { message: 'roles must contain at least one role' })
     @IsEnum(Role, { each: true, message: 'Each role must be one of: PetOwner, PetSitter, Admin' })
     roles: Role[];
   }
