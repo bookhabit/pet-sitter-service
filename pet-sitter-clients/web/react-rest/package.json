@@ -13,7 +13,13 @@
     "icons:format": "npx prettier --write src/design-system/icons/components",
     "icons:index": "node scripts/generate-icons.cjs",
     "icons": "npm run icons:pre && npm run icons:build && npm run icons:format && npm run icons:index",
-    "assets": "node scripts/generate-assets.cjs"
+    "assets": "node scripts/generate-assets.cjs",
+    "prepare": "cd ../../.. && husky"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx,js,jsx,css,json}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -46,6 +52,8 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "eslint-plugin-unused-imports": "^4.4.1",
     "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "postcss": "^8.5.6",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
