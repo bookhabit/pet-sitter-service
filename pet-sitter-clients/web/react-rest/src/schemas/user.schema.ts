@@ -46,6 +46,19 @@ export const createUserInputSchema = z.object({
 
 export type CreateUserInput = z.infer<typeof createUserInputSchema>;
 
+/* ─── SignupForm (폼 전용 — API 스키마 확장) ──────────────── */
+
+export const signupFormSchema = createUserInputSchema
+  .extend({
+    password_confirm: z.string().min(1, '비밀번호 확인을 입력해주세요.'),
+  })
+  .refine((data) => data.password === data.password_confirm, {
+    message: '비밀번호가 일치하지 않습니다.',
+    path: ['password_confirm'],
+  });
+
+export type SignupFormInput = z.infer<typeof signupFormSchema>;
+
 export const updateUserInputSchema = z.object({
   email: z.string().email().optional(),
   full_name: z.string().max(20).optional(),

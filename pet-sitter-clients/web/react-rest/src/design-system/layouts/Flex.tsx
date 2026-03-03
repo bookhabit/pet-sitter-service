@@ -17,7 +17,18 @@ interface FlexProps extends HTMLAttributes<HTMLElement> {
   gap?: number;
   wrap?: boolean;
   /** 렌더링할 HTML 태그 */
-  as?: 'div' | 'section' | 'article' | 'main' | 'aside' | 'nav' | 'header' | 'footer' | 'ul' | 'ol' | 'li';
+  as?:
+    | 'div'
+    | 'section'
+    | 'article'
+    | 'main'
+    | 'aside'
+    | 'nav'
+    | 'header'
+    | 'footer'
+    | 'ul'
+    | 'ol'
+    | 'li';
   children: ReactNode;
 }
 

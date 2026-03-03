@@ -3,9 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useSignupMutation } from '@/hooks/auth';
-import { createUserInputSchema } from '@/schemas/user.schema';
+import { signupFormSchema } from '@/schemas/user.schema';
 
-import type { CreateUserInput, UserRole } from '@/schemas/user.schema';
+import type { SignupFormInput, UserRole } from '@/schemas/user.schema';
 
 /**
  * [Logic Hook] 회원가입 폼 상태 + 서버 연결을 담당합니다.
@@ -13,7 +13,7 @@ import type { CreateUserInput, UserRole } from '@/schemas/user.schema';
  * 흐름: useForm(zodResolver) → selectedRole(useState) → useSignupMutation → onSubmit
  */
 export function useSignupForm() {
-  const [selectedRole, setSelectedRole] = useState<UserRole>('PetOwner');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('PetSitter');
   const { mutate, isPending, error } = useSignupMutation();
 
   const {
@@ -21,9 +21,9 @@ export function useSignupForm() {
     handleSubmit,
     setValue,
     formState: { errors },
-  } = useForm<CreateUserInput>({
-    resolver: zodResolver(createUserInputSchema),
-    defaultValues: { roles: ['PetOwner'] },
+  } = useForm<SignupFormInput>({
+    resolver: zodResolver(signupFormSchema),
+    defaultValues: { roles: ['PetSitter'] },
     mode: 'onBlur',
   });
 
@@ -40,7 +40,9 @@ export function useSignupForm() {
     setValue('roles', [role], { shouldValidate: true });
   };
 
-  const onSubmit = handleSubmit((data) => mutate(data));
+  const onSubmit = handleSubmit(({ email, full_name, password, roles }) => {
+    mutate({ email, full_name, password, roles });
+  });
 
   return { register, onSubmit, errors, isPending, serverError, selectedRole, selectRole };
 }

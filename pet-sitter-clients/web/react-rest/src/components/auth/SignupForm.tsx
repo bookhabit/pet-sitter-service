@@ -1,13 +1,30 @@
 import { useNavigate } from 'react-router-dom';
 
 import { Button, Flex, Spacing, Text, TextField } from '@/design-system';
+import {
+  DogIcon,
+  EditIcon,
+  LockIcon,
+  MailIcon,
+  MapIcon,
+  PhoneIcon,
+  UserIcon,
+} from '@/design-system/icons';
 import { useSignupForm } from '@/hooks/forms/useSignupForm';
 
 import type { UserRole } from '@/schemas/user.schema';
 
-const ROLES: { value: UserRole; label: string }[] = [
-  { value: 'PetOwner', label: '펫 주인' },
-  { value: 'PetSitter', label: '펫시터' },
+import { AuthFormLayout } from './AuthFormLayout';
+import { SelectButton } from './SelectButton';
+
+const SIGNUP_ROLES: {
+  value: UserRole;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+}[] = [
+  { value: 'PetSitter', label: '펫시터', description: '일자리 찾기', icon: <UserIcon size={24} /> },
+  { value: 'PetOwner', label: '구인자', description: '펫시터 구하기', icon: <DogIcon size={24} /> },
 ];
 
 /**
@@ -22,102 +39,102 @@ export function SignupForm() {
     useSignupForm();
 
   return (
-    <Flex direction="column" align="center" className="min-h-dvh px-24">
-      <Spacing size={64} />
-
-      <Flex direction="column" className="w-full max-w-[40rem]">
-        <Text as="h1" size="t1" className="text-center">
-          회원가입
-        </Text>
-
-        <Spacing size={32} />
-
-        {/* 서버 에러 배너 */}
-        {serverError && (
-          <p className="rounded-xl bg-red-50 border border-red-200 px-16 py-12 text-b2 text-danger">
+    <AuthFormLayout title="펫시터" subtitle="회원가입하고 시작하세요">
+      {/* 서버 에러 배너 */}
+      {serverError && (
+        <>
+          <p className="rounded-xl border border-red-200 bg-red-50 px-16 py-12 text-b2 text-danger">
             {serverError}
           </p>
-        )}
+          <Spacing size={12} />
+        </>
+      )}
 
-        <Spacing size={24} />
-
-        <form onSubmit={onSubmit}>
-          <Flex direction="column" gap={16}>
-            {/* 역할 선택 */}
-            <Flex direction="column" gap={8}>
-              <Text as="label" size="b2" color="secondary">
-                역할 선택
-              </Text>
-              <Flex gap={12}>
-                {ROLES.map(({ value, label }) => {
-                  const isActive = selectedRole === value;
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => selectRole(value)}
-                      className={[
-                        'flex-1 rounded-xl border-2 py-12 text-b2 font-bold transition-all',
-                        isActive
-                          ? 'border-primary bg-blue-50 text-primary'
-                          : 'border-grey200 bg-background text-text-secondary hover:border-primary/40',
-                      ].join(' ')}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </Flex>
-              {errors.roles && (
-                <span className="text-caption text-danger">{errors.roles.message}</span>
-              )}
-            </Flex>
-
-            <TextField
-              label="이름"
-              type="text"
-              placeholder="김주인"
-              error={errors.full_name?.message}
-              {...register('full_name')}
+      {/* 가입 유형 선택 */}
+      <Flex direction="column" gap={8} align="stretch">
+        <Text as="label" size="b2" color="secondary">
+          가입 유형 선택
+        </Text>
+        <Flex gap={12}>
+          {SIGNUP_ROLES.map(({ value, label, description, icon }) => (
+            <SelectButton
+              key={value}
+              isSelected={selectedRole === value}
+              onClick={() => selectRole(value)}
+              icon={icon}
+              label={label}
+              description={description}
             />
-
-            <TextField
-              label="이메일"
-              type="email"
-              autoComplete="email"
-              placeholder="owner1@test.com"
-              error={errors.email?.message}
-              {...register('email')}
-            />
-
-            <TextField
-              label="비밀번호 (8자 이상)"
-              type="password"
-              autoComplete="new-password"
-              placeholder="비밀번호 입력"
-              error={errors.password?.message}
-              {...register('password')}
-            />
-
-            <Spacing size={4} />
-
-            <Button type="submit" size="lg" isLoading={isPending} className="w-full">
-              회원가입
-            </Button>
-          </Flex>
-        </form>
-
-        <Spacing size={16} />
-
-        <Button
-          variant="ghost"
-          size="md"
-          className="w-full"
-          onClick={() => navigate('/login')}
-        >
-          이미 계정이 있으신가요? 로그인
-        </Button>
+          ))}
+        </Flex>
+        {errors.roles && <span className="text-caption text-danger">{errors.roles.message}</span>}
       </Flex>
-    </Flex>
+
+      <Spacing size={24} />
+
+      {/* 회원가입 폼 */}
+      <form onSubmit={onSubmit}>
+        <Flex direction="column" gap={16} align="stretch">
+          <TextField
+            label="이름"
+            type="text"
+            placeholder="홍길동"
+            leftIcon={<UserIcon size={18} />}
+            error={errors.full_name?.message}
+            {...register('full_name')}
+          />
+
+          <TextField
+            label="이메일"
+            type="email"
+            autoComplete="email"
+            placeholder="example@email.com"
+            leftIcon={<MailIcon size={18} />}
+            error={errors.email?.message}
+            {...register('email')}
+          />
+
+          <TextField
+            label="비밀번호"
+            type="password"
+            autoComplete="new-password"
+            placeholder="••••••••"
+            leftIcon={<LockIcon size={18} />}
+            error={errors.password?.message}
+            {...register('password')}
+          />
+
+          <TextField
+            label="비밀번호 확인"
+            type="password"
+            autoComplete="new-password"
+            placeholder="••••••••"
+            leftIcon={<LockIcon size={18} />}
+            error={errors.password_confirm?.message}
+            {...register('password_confirm')}
+          />
+
+          <Spacing size={4} />
+
+          <Button type="submit" size="lg" isLoading={isPending} className="w-full">
+            회원가입
+          </Button>
+        </Flex>
+      </form>
+
+      <Spacing size={16} />
+
+      {/* 로그인 링크 */}
+      <p className="text-center text-b2 text-text-secondary">
+        이미 계정이 있으신가요?{' '}
+        <button
+          type="button"
+          onClick={() => navigate('/login')}
+          className="font-medium text-primary"
+        >
+          로그인
+        </button>
+      </p>
+    </AuthFormLayout>
   );
 }
