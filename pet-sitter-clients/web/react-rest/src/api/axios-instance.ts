@@ -11,7 +11,7 @@ interface CustomConfig extends AxiosRequestConfig {
   _retry?: boolean; // 토큰 재시도 플래그
 }
 
-const BASE_URL = 'http://localhost:8000';
+export const BASE_URL = 'http://localhost:8000';
 
 // 2. 공통 설정
 const BASE_CONFIG = {

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import type { ImgHTMLAttributes } from 'react';
 import { Skeleton } from '../Skeleton';
 import { ASSETS } from '@/design-system/images';
+import { BASE_URL } from '@/api/axios-instance';
+import { getFullImageUrl } from '@/utils/image';
 
 interface ImageProps extends ImgHTMLAttributes<HTMLImageElement> {
   fallback?: string;
@@ -25,13 +27,16 @@ export function Image({
     if (!isError) setIsError(true);
   };
 
+  // src가 없거나 에러가 났을 때 보여줄 최종 경로 결정
+  const finalSrc = isError || !src ? fallback : getFullImageUrl(src);
+
   return (
     <div className={`relative overflow-hidden ${className}`}>
       {/* 2. 로딩 및 스켈레톤 처리 */}
       {!isLoaded && !isError && <Skeleton className="absolute inset-0 h-full w-full" />}
 
       <img
-        src={isError ? fallback : src}
+        src={finalSrc}
         alt={alt}
         loading="lazy"
         onLoad={() => setIsLoaded(true)}
