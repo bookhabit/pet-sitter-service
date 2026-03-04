@@ -17,11 +17,24 @@ const validate = <T>(data: unknown, schema: z.ZodSchema<T>): T => schema.parse(d
 export const photoService = {
   /** 다중 파일 업로드. 공고/반려동물 등록 전 photo_ids 획득에 사용 */
   uploadMany: (files: File[]): Promise<Photo[]> => {
-    const formData = new FormData();
-    files.forEach((file) => formData.append('files', file));
-    return privateApi
-      .post('/photos/upload', formData)
-      .then((res) => validate(res.data, z.array(photoSchema)));
+    console.log('업로드할 파일들:', files);
+    try {
+      const formData = new FormData();
+      files.forEach((file) => formData.append('files', file));
+
+      return privateApi
+        .post('/photos/upload', formData, {
+          headers: {
+            // 중요: undefined로 설정하면 Axios가 고정된 'application/json'을 지우고
+            // 브라우저가 FormData에 맞는 'multipart/form-data; boundary=...'를 자동 생성하게 합니다.
+            'Content-Type': undefined,
+          },
+        })
+        .then((res) => validate(res.data, z.array(photoSchema)));
+    } catch (error) {
+      console.error('사진 업로드 중 오류:', error);
+      throw error;
+    }
   },
 
   /** 사용자 프로필 사진 업로드 */
@@ -29,7 +42,13 @@ export const photoService = {
     const formData = new FormData();
     formData.append('file', file);
     return privateApi
-      .post(`/users/${userId}/photos`, formData)
+      .post(`/users/${userId}/photos`, formData, {
+        headers: {
+          // 중요: undefined로 설정하면 Axios가 고정된 'application/json'을 지우고
+          // 브라우저가 FormData에 맞는 'multipart/form-data; boundary=...'를 자동 생성하게 합니다.
+          'Content-Type': undefined,
+        },
+      })
       .then((res) => validate(res.data, photoSchema));
   },
 
@@ -38,7 +57,13 @@ export const photoService = {
     const formData = new FormData();
     formData.append('file', file);
     return privateApi
-      .post(`/jobs/${jobId}/photos`, formData)
+      .post(`/jobs/${jobId}/photos`, formData, {
+        headers: {
+          // 중요: undefined로 설정하면 Axios가 고정된 'application/json'을 지우고
+          // 브라우저가 FormData에 맞는 'multipart/form-data; boundary=...'를 자동 생성하게 합니다.
+          'Content-Type': undefined,
+        },
+      })
       .then((res) => validate(res.data, photoSchema));
   },
 
@@ -47,7 +72,13 @@ export const photoService = {
     const formData = new FormData();
     formData.append('file', file);
     return privateApi
-      .post(`/pets/${petId}/photos`, formData)
+      .post(`/pets/${petId}/photos`, formData, {
+        headers: {
+          // 중요: undefined로 설정하면 Axios가 고정된 'application/json'을 지우고
+          // 브라우저가 FormData에 맞는 'multipart/form-data; boundary=...'를 자동 생성하게 합니다.
+          'Content-Type': undefined,
+        },
+      })
       .then((res) => validate(res.data, photoSchema));
   },
 

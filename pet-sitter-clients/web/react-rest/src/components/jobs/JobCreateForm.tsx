@@ -27,6 +27,7 @@ export default function JobCreateForm() {
     onSubmit,
     errors,
     isPending,
+    isUploadPending,
     serverError,
     fields,
     addPet,
@@ -35,7 +36,15 @@ export default function JobCreateForm() {
     watchPets,
     selectPriceType,
     watchPriceType,
+    previewUrls,
+    handleFileChange,
+    removeFile,
+    petPreviewUrls,
+    handlePetFileChange,
+    removePetFile,
   } = useCreateJobs();
+
+  const isSubmitting = isPending || isUploadPending;
 
   return (
     <div className="mx-auto max-w-2xl px-16 py-24">
@@ -121,6 +130,50 @@ export default function JobCreateForm() {
                   error={errors.pets?.[index]?.breed?.message}
                   {...register(`pets.${index}.breed`)}
                 />
+
+                {/* 반려동물 사진 업로드 */}
+                <div>
+                  <label className="mb-8 block text-b2 font-bold text-text-primary">
+                    반려동물 사진 (선택)
+                  </label>
+
+                  <label
+                    htmlFor={`pet-photos-${index}`}
+                    className="py-20 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-grey200 px-16 text-b2 text-text-secondary hover:bg-background"
+                  >
+                    + 사진 선택
+                  </label>
+                  <input
+                    id={`pet-photos-${index}`}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="sr-only"
+                    onChange={(e) => handlePetFileChange(index, e)}
+                  />
+
+                  {(petPreviewUrls[index]?.length ?? 0) > 0 && (
+                    <div className="mt-12 flex flex-wrap gap-12">
+                      {petPreviewUrls[index].map((url, fileIndex) => (
+                        <div key={url} className="h-40 w-40 relative">
+                          <img
+                            src={url}
+                            alt={`반려동물 ${index + 1} 미리보기 ${fileIndex + 1}`}
+                            className="h-full w-full rounded-lg object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removePetFile(index, fileIndex)}
+                            className="h-20 w-20 absolute right-4 top-4 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+                            aria-label={`반려동물 ${index + 1} 사진 ${fileIndex + 1} 제거`}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </Flex>
             </div>
           ))}
@@ -159,7 +212,51 @@ export default function JobCreateForm() {
 
           <Spacing size={8} />
 
-          <Button type="submit" size="lg" isLoading={isPending} className="w-full">
+          {/* job 전체 사진 업로드 */}
+          <div>
+            <label className="mb-8 block text-b2 font-bold text-text-primary">사진 (선택)</label>
+
+            <label
+              htmlFor="job-photos"
+              className="py-20 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-grey200 px-16 text-b2 text-text-secondary hover:bg-background"
+            >
+              + 사진 선택
+            </label>
+            <input
+              id="job-photos"
+              type="file"
+              accept="image/*"
+              multiple
+              className="sr-only"
+              onChange={handleFileChange}
+            />
+
+            {previewUrls.length > 0 && (
+              <div className="mt-12 flex flex-wrap gap-12">
+                {previewUrls.map((url, index) => (
+                  <div key={url} className="h-40 w-40 relative">
+                    <img
+                      src={url}
+                      alt={`미리보기 ${index + 1}`}
+                      className="h-full w-full rounded-lg object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="h-20 w-20 absolute right-4 top-4 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+                      aria-label={`사진 ${index + 1} 제거`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Spacing size={8} />
+
+          <Button type="submit" size="lg" isLoading={isSubmitting} className="w-full">
             등록
           </Button>
         </Flex>
