@@ -3,27 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Badge, Flex, Spacing, Text } from '@/design-system';
 
 import type { Job } from '@/schemas/job.schema';
+import { formatDateTime, formatPrice } from '@/utils/format';
 
 interface Props {
   job: Job;
-}
-
-// utils로 분리
-function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
-}
-
-// utils로 분리
-function formatPrice(price: number | null, priceType: string | null): string | null {
-  if (!price) return null;
-  const formatted = new Intl.NumberFormat('ko-KR').format(price);
-  const unit = priceType === 'hourly' ? '시간' : '일';
-  return `${formatted}원 / ${unit}`;
 }
 
 /**
@@ -64,7 +47,7 @@ export function JobCard({ job }: Props) {
 
       {/* 날짜 */}
       <Text size="b2" color="secondary">
-        {formatDate(job.start_time)} ~ {formatDate(job.end_time)}
+        {formatDateTime(job.start_time)} ~ {formatDateTime(job.end_time)}
       </Text>
 
       {/* 위치 */}
