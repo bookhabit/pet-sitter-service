@@ -1,7 +1,9 @@
-import { Button, Flex, Spacing, TextField } from '@/design-system';
+import { Button, Flex, Spacing, TextArea, TextField } from '@/design-system';
 import { useCreateJobs } from '@/hooks/forms/useCreateJobs';
 
 import type { PetSpecies, PriceType } from '@/schemas/job.schema';
+
+import { OptionSelector } from './OptionSelector';
 
 const SPECIES_OPTIONS: { value: PetSpecies; label: string }[] = [
   { value: 'Dog', label: 'Dog' },
@@ -63,37 +65,28 @@ export default function JobCreateForm() {
           />
 
           {/* 돌봄 내용 */}
-          <div className="flex flex-col gap-8">
-            <label htmlFor="내용" className="text-b2 text-text-secondary">
-              내용
-            </label>
-            <textarea
-              id="내용"
-              rows={4}
-              className="aria-invalid:border-danger w-full rounded-xl border border-grey200 px-16 py-12 text-b1 text-text-primary outline-none transition-all placeholder:text-text-secondary focus:border-primary"
-              aria-invalid={!!errors.activity}
-              placeholder="돌봄 내용을 입력해주세요. (5자 이상)"
-              {...register('activity')}
-            />
-            {errors.activity && (
-              <span className="text-caption text-danger" role="alert">
-                {errors.activity.message}
-              </span>
-            )}
-          </div>
+          <TextArea
+            label="내용"
+            rows={4}
+            placeholder="돌봄 내용을 입력해주세요. (5자 이상)"
+            error={errors.activity?.message}
+            {...register('activity')}
+          />
 
           {/* 반려동물 목록 */}
           {fields.map((field, index) => (
             <div key={field.id} className="rounded-xl border border-grey200 bg-background p-16">
               <Flex justify="between" align="center" className="mb-12">
                 <span className="text-b1 font-bold text-text-primary">반려동물 {index + 1}</span>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => remove(index)}
-                  className="text-caption text-text-secondary hover:text-danger"
+                  className="text-text-secondary hover:text-danger"
                 >
                   삭제
-                </button>
+                </Button>
               </Flex>
 
               <Flex direction="column" gap={12} align="stretch">
@@ -113,31 +106,13 @@ export default function JobCreateForm() {
                   {...register(`pets.${index}.age`)}
                 />
 
-                {/* 동물 종 선택 */}
-                <div className="flex flex-col gap-8">
-                  <span className="text-b2 text-text-secondary">동물 종</span>
-                  <Flex gap={8}>
-                    {SPECIES_OPTIONS.map(({ value, label }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => selectSpecies(index, value)}
-                        className={`py-10 rounded-xl border px-16 text-b2 font-bold transition-all ${
-                          watchPets[index]?.species === value
-                            ? 'border-primary bg-primary text-white'
-                            : 'border-grey200 bg-white text-text-primary hover:brightness-95'
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </Flex>
-                  {errors.pets?.[index]?.species && (
-                    <span className="text-caption text-danger" role="alert">
-                      {errors.pets[index].species.message}
-                    </span>
-                  )}
-                </div>
+                <OptionSelector
+                  label="동물 종"
+                  options={SPECIES_OPTIONS}
+                  selectedValue={watchPets[index]?.species as PetSpecies | undefined}
+                  onSelect={(species) => selectSpecies(index, species)}
+                  error={errors.pets?.[index]?.species?.message}
+                />
 
                 <TextField
                   label="품종"
@@ -165,12 +140,7 @@ export default function JobCreateForm() {
           <Spacing size={8} />
 
           {/* 선택 항목 */}
-          <TextField
-            label="주소"
-            placeholder="예: 서울시 강남구 (선택)"
-            error={undefined}
-            {...register('address')}
-          />
+          <TextField label="주소" placeholder="예: 서울시 강남구 (선택)" {...register('address')} />
 
           <TextField
             label="가격"
@@ -179,35 +149,17 @@ export default function JobCreateForm() {
             {...register('price')}
           />
 
-          {/* 가격 단위 선택 */}
-          <div className="flex flex-col gap-8">
-            <span className="text-b2 text-text-secondary">가격 단위</span>
-            <Flex gap={8}>
-              {PRICE_TYPE_OPTIONS.map(({ value, label }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => selectPriceType(value)}
-                  className={`py-10 rounded-xl border px-16 text-b2 font-bold transition-all ${
-                    watchPriceType === value
-                      ? 'border-primary bg-primary text-white'
-                      : 'border-grey200 bg-white text-text-primary hover:brightness-95'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </Flex>
-            {errors.price_type && (
-              <span className="text-caption text-danger" role="alert">
-                {errors.price_type.message}
-              </span>
-            )}
-          </div>
+          <OptionSelector
+            label="가격 단위"
+            options={PRICE_TYPE_OPTIONS}
+            selectedValue={watchPriceType}
+            onSelect={selectPriceType}
+            error={errors.price_type?.message}
+          />
 
           <Spacing size={8} />
 
-          <Button type="submit" size="lg" disabled={isPending} className="w-full">
+          <Button type="submit" size="lg" isLoading={isPending} className="w-full">
             등록
           </Button>
         </Flex>

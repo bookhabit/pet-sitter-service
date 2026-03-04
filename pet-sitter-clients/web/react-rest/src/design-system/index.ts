@@ -9,6 +9,7 @@
 // Atoms
 export { Badge } from './atoms/Badge';
 export { Button } from './atoms/Button';
+export { TextArea } from './atoms/TextArea';
 export { Checkbox } from './atoms/Checkbox';
 export { Overlay } from './atoms/Overlay';
 export { Skeleton } from './atoms/Skeleton';

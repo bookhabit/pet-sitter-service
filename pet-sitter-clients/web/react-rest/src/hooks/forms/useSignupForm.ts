@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useSignupMutation } from '@/hooks/auth';
 import { signupFormSchema } from '@/schemas/user.schema';
+import { getHttpErrorStatus } from '@/utils/get-http-error-status';
 
 import type { SignupFormInput, UserRole } from '@/schemas/user.schema';
 
@@ -29,7 +30,7 @@ export function useSignupForm() {
 
   const serverError = (() => {
     if (!error) return null;
-    const status = (error as { response?: { status?: number } }).response?.status;
+    const status = getHttpErrorStatus(error);
     if (status === 409) return '이미 사용 중인 이메일입니다.';
     if (status === 400) return '입력 정보를 확인해주세요.';
     return '회원가입 중 오류가 발생했습니다.';

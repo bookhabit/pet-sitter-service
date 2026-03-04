@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 
 import { useLoginMutation } from '@/hooks/auth';
 import { loginInputSchema } from '@/schemas/auth.schema';
+import { getHttpErrorStatus } from '@/utils/get-http-error-status';
 
 import type { LoginInput } from '@/schemas/auth.schema';
 
@@ -30,7 +31,7 @@ export function useLoginForm() {
 
   const serverError = (() => {
     if (!error) return null;
-    const status = (error as { response?: { status?: number } }).response?.status;
+    const status = getHttpErrorStatus(error);
     if (status === 401) return '이메일 또는 비밀번호가 올바르지 않습니다.';
     return '로그인 중 오류가 발생했습니다.';
   })();

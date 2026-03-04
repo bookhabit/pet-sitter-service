@@ -3,7 +3,8 @@
     "allow": [
       "mcp__figma__get_design_context",
       "Bash(ls:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(npx tsc --noEmit 2>&1)"
     ]
   }
 }

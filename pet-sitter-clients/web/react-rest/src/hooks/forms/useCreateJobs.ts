@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { useCreateJobMutation } from '@/hooks/jobs';
 import { createJobFormSchema } from '@/schemas/job.schema';
+import { getHttpErrorStatus } from '@/utils/get-http-error-status';
 
 import type {
   CreateJobFormInput,
@@ -37,15 +38,16 @@ export function useCreateJobs() {
 
   const { fields, append, remove } = useFieldArray({ control, name: 'pets' });
 
+  // createdJob is typed as Job by jobService.createJob — Job has id: string
   useEffect(() => {
-    if (isSuccess && createdJob && 'id' in (createdJob as object)) {
-      navigate(`/jobs/${(createdJob as { id: string }).id}`);
+    if (isSuccess && createdJob) {
+      navigate(`/jobs/${createdJob.id}`);
     }
   }, [isSuccess, createdJob, navigate]);
 
   const serverError = (() => {
     if (!error) return null;
-    const status = (error as { response?: { status?: number } }).response?.status;
+    const status = getHttpErrorStatus(error);
     if (status === 403) return '구인공고 등록 권한이 없습니다.';
     return '구인공고 등록 중 오류가 발생했습니다.';
   })();
@@ -55,8 +57,9 @@ export function useCreateJobs() {
   };
 
   const selectSpecies = (index: number, species: PetSpecies) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setValue(`pets.${index}.species` as any, species, { shouldValidate: true });
+    setValue(`pets.${index}.species` as `pets.${number}.species`, species, {
+      shouldValidate: true,
+    });
   };
 
   const selectPriceType = (priceType: PriceType) => {
