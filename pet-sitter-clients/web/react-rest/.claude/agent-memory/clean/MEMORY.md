@@ -17,4 +17,5 @@ Utils: cn
 ## Job Feature Components
 - `src/components/jobs/OptionSelector.tsx` — generic toggle-button group (species, price type selectors)
 - `src/components/jobs/JobCreateForm.tsx` — job creation form view
-- `src/hooks/forms/useCreateJobs.ts` — job creation form logic hook
+- `src/hooks/forms/useCreateJobs.ts` — job creation form logic + submit orchestration
+- `src/hooks/forms/useJobPhotoFiles.ts` — job/pet photo file state (petCount param syncs petFiles array)

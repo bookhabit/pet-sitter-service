@@ -27,6 +27,11 @@ NOT `as any`.
 `useCreateJobMutation` data is typed as `Job` (from `jobService.createJob: Promise<Job>`).
 `Job` has `id: string`. No runtime `'id' in createdJob` guard needed.
 
+### Derived File-State Sync Pattern (confirmed in useJobPhotoFiles)
+When a sub-state array must stay in sync with an external count (e.g., pet index array matching pets.length),
+use `useEffect` watching the count and resize with `slice` / `Array.from` inside `setState`.
+Do NOT couple setPetFiles into append/remove handlers — that violates SRP by mixing concerns.
+
 ## Common Violations Found
 - `as any` in setValue nested path workaround
 - `(error as { response?: { status?: number } }).response?.status` repeated across all form hooks
@@ -34,3 +39,4 @@ NOT `as any`.
 - Raw `<textarea>` bypassing design system
 - Duplicate toggle-button JSX blocks in same file
 - `error={undefined}` passed explicitly (redundant)
+- Mixed file-state + form-state in a single hook (extracted to useJobPhotoFiles)

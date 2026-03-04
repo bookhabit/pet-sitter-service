@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { useCreateJobMutation } from '@/hooks/jobs';
 import { useUploadPhotosMutation } from '@/hooks/photos';
 import { createJobFormSchema } from '@/schemas/job.schema';
 import { getHttpErrorStatus } from '@/utils/get-http-error-status';
+import { useJobPhotoFiles } from './useJobPhotoFiles';
 
 import type {
   CreateJobFormInput,
@@ -19,17 +20,14 @@ import type {
  * [Logic Hook] 구인공고 등록 폼 상태 + 서버 연결을 담당합니다.
  *
  * 흐름: useForm(zodResolver) → useFieldArray(pets) → useUploadPhotosMutation → useCreateJobMutation → onSubmit
+ * 사진 파일 상태는 useJobPhotoFiles에 위임합니다.
  * 사진이 있을 경우 사전 업로드 후 반환된 photo_ids를 CreateJobInput에 포함합니다.
- * job 전체 사진과 pet별 사진을 각각 독립적으로 업로드합니다.
  */
 export function useCreateJobs() {
   const navigate = useNavigate();
   const { mutate, isPending, error, isSuccess, data: createdJob } = useCreateJobMutation();
   const { mutateAsync: uploadPhotos, isPending: isUploadPending } = useUploadPhotosMutation();
 
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  // 각 pet 인덱스에 대응하는 파일 배열 (petFiles[i] = i번째 pet의 파일 목록)
-  const [petFiles, setPetFiles] = useState<File[][]>([]);
   // 업로드 실패 시 사용자에게 표시할 에러 메시지
   const [uploadServerError, setUploadServerError] = useState<string | null>(null);
 
@@ -48,24 +46,26 @@ export function useCreateJobs() {
 
   const { fields, append, remove } = useFieldArray({ control, name: 'pets' });
 
+  const watchPets = watch('pets');
+  const watchPriceType = watch('price_type');
+
+  const {
+    jobFiles: selectedFiles,
+    jobPreviewUrls: previewUrls,
+    handleJobFileChange: handleFileChange,
+    removeJobFile: removeFile,
+    petFiles,
+    petPreviewUrls,
+    handlePetFileChange,
+    removePetFile,
+  } = useJobPhotoFiles(watchPets.length);
+
   // createdJob is typed as Job by jobService.createJob — Job has id: string
   useEffect(() => {
     if (isSuccess && createdJob) {
       navigate(`/jobs/${createdJob.id}`);
     }
   }, [isSuccess, createdJob, navigate]);
-
-  // URL.createObjectURL 결과물은 selectedFiles가 바뀔 때만 재생성
-  const previewUrls = useMemo(
-    () => selectedFiles.map((file) => URL.createObjectURL(file)),
-    [selectedFiles],
-  );
-
-  // pet별 미리보기 URL 배열 — petFiles가 바뀔 때만 재생성
-  const petPreviewUrls = useMemo(
-    () => petFiles.map((files) => files.map((file) => URL.createObjectURL(file))),
-    [petFiles],
-  );
 
   const serverError = (() => {
     if (uploadServerError) return uploadServerError;
@@ -77,14 +77,12 @@ export function useCreateJobs() {
 
   const addPet = () => {
     append({ name: '', age: '', species: '', breed: '' });
-    // pet 추가 시 해당 인덱스에 빈 파일 배열 삽입
-    setPetFiles((prev) => [...prev, []]);
+    // petFiles 동기화는 useJobPhotoFiles가 watchPets.length 변화를 감지해 처리
   };
 
-  // useFieldArray의 remove를 wrapping해서 petFiles도 함께 동기화
   const removePet = (index: number) => {
     remove(index);
-    setPetFiles((prev) => prev.filter((_, i) => i !== index));
+    // petFiles 동기화는 useJobPhotoFiles가 watchPets.length 변화를 감지해 처리
   };
 
   const selectSpecies = (index: number, species: PetSpecies) => {
@@ -96,39 +94,6 @@ export function useCreateJobs() {
   const selectPriceType = (priceType: PriceType) => {
     setValue('price_type', priceType, { shouldValidate: true });
   };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-
-    if (!files) return;
-    setSelectedFiles((prev) => [...prev, ...Array.from(files)]);
-  };
-
-  const removeFile = (index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handlePetFileChange = (petIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-
-    if (!files) return;
-    setPetFiles((prev) => {
-      const next = [...prev];
-      next[petIndex] = [...(next[petIndex] ?? []), ...Array.from(files)];
-      return next;
-    });
-  };
-
-  const removePetFile = (petIndex: number, fileIndex: number) => {
-    setPetFiles((prev) => {
-      const next = [...prev];
-      next[petIndex] = (next[petIndex] ?? []).filter((_, i) => i !== fileIndex);
-      return next;
-    });
-  };
-
-  const watchPets = watch('pets');
-  const watchPriceType = watch('price_type');
 
   const onSubmit = handleSubmit(async (data) => {
     // 이전 업로드 에러 초기화
