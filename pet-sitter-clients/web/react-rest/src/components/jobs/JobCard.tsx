@@ -8,6 +8,7 @@ interface Props {
   job: Job;
 }
 
+// utils로 분리
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('ko-KR', {
     month: 'long',
@@ -17,6 +18,7 @@ function formatDate(date: Date): string {
   }).format(date);
 }
 
+// utils로 분리
 function formatPrice(price: number | null, priceType: string | null): string | null {
   if (!price) return null;
   const formatted = new Intl.NumberFormat('ko-KR').format(price);
@@ -44,7 +46,7 @@ export function JobCard({ job }: Props) {
       tabIndex={0}
       onClick={() => navigate(`/jobs/${job.id}`)}
       onKeyDown={(e) => e.key === 'Enter' && navigate(`/jobs/${job.id}`)}
-      className="cursor-pointer rounded-2xl border border-grey200 bg-white p-16 transition-all hover:border-primary/40 hover:shadow-md active:scale-[0.99]"
+      className="hover:border-primary/40 cursor-pointer rounded-2xl border border-grey200 bg-white p-16 transition-all hover:shadow-md active:scale-[0.99]"
     >
       {/* 제목 + 가격 */}
       <Flex justify="between" align="start" gap={12}>

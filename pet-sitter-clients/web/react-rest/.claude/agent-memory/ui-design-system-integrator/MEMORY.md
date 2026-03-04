@@ -48,6 +48,28 @@ TrashIcon, UserIcon, XIcon
 - `src/components/auth/LoginForm.tsx` — polished auth form with icon, gradient bg, card layout
 - `src/components/auth/AuthFormLayout.tsx` — white card `rounded-2xl bg-white p-32 shadow-xl`
 
+## Infinite Scroll Pattern (Intersection Observer)
+```tsx
+const sentinelRef = useRef<HTMLDivElement>(null);
+useEffect(() => {
+  const sentinel = sentinelRef.current;
+  if (!sentinel) return;
+  const observer = new IntersectionObserver(
+    ([entry]) => { if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) onLoadMore(); },
+    { threshold: 0.1 },
+  );
+  observer.observe(sentinel);
+  return () => observer.disconnect();
+}, [hasNextPage, isFetchingNextPage, onLoadMore]);
+// Sentinel placed inside hasNextPage guard; spinner inside isFetchingNextPage guard
+```
+- `<Spinner size={24} color="primary" />` for loading indicator
+- Sentinel must be inside the `hasNextPage` guard (unmount when no more pages)
+
+## Job List Grid Layout (Figma node 6-2253)
+- Figma shows 3-column card grid: `grid grid-cols-1 gap-20 sm:grid-cols-2 lg:grid-cols-3`
+- Cards are full-width within their grid cell
+
 ## Rules Confirmed
 - Zero inline styles (no `style={{ }}`) — Flex gap is the only exception (design system internal)
 - Spacing between sibling sections: `<Spacing size={16} />` not margin classes
