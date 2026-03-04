@@ -97,6 +97,72 @@ export const updateJobSchema = createJobSchema.partial();
 
 export type UpdateJobInput = z.infer<typeof updateJobSchema>;
 
+/* ─── Form-specific Schema (폼 전용 — UI 입력값 검증) ────────── */
+
+const petFormInputSchema = z.object({
+  name: z
+    .string()
+    .min(1, '이름을 입력해주세요.')
+    .min(2, '이름은 2자 이상 입력해주세요.')
+    .max(20, '이름은 20자 이하로 입력해주세요.'),
+  age: z
+    .string()
+    .min(1, '나이를 입력해주세요.')
+    .refine(
+      (v) => !isNaN(Number(v)) && Number(v) >= 1 && Number(v) <= 100,
+      '나이는 1~100 사이로 입력해주세요.',
+    ),
+  species: z
+    .string()
+    .min(1, '동물 종을 선택해주세요.')
+    .refine((v: string): boolean => v === 'Cat' || v === 'Dog', '동물 종을 선택해주세요.'),
+  breed: z.string().min(1, '품종을 입력해주세요.'),
+});
+
+export const createJobFormSchema = z
+  .object({
+    start_time: z.string().min(1, '시작 일시를 입력해주세요.'),
+    end_time: z.string().min(1, '종료 일시를 입력해주세요.'),
+    activity: z
+      .string()
+      .min(1, '내용을 입력해주세요.')
+      .min(5, '내용은 5자 이상 입력해주세요.')
+      .max(500, '내용은 500자 이하로 입력해주세요.'),
+    pets: z.array(petFormInputSchema).min(1, '반려동물을 1마리 이상 추가해주세요.'),
+    address: z.string().optional(),
+    price: z
+      .string()
+      .optional()
+      .refine(
+        (v) => v === '' || v === undefined || (!isNaN(Number(v)) && Number(v) >= 0),
+        '가격은 0 이상이어야 합니다.',
+      ),
+    price_type: priceTypeSchema.optional(),
+  })
+  .refine(
+    (data) => {
+      if (!data.start_time || !data.end_time) return true;
+      return data.end_time > data.start_time;
+    },
+    { message: '종료 일시는 시작 일시 이후여야 합니다.', path: ['end_time'] },
+  )
+  .refine(
+    (data) => {
+      const hasPrice = data.price !== '' && data.price !== undefined;
+      return !(hasPrice && !data.price_type);
+    },
+    { message: '가격 단위를 선택해주세요.', path: ['price_type'] },
+  )
+  .refine(
+    (data) => {
+      const hasPrice = data.price !== '' && data.price !== undefined;
+      return !(data.price_type && !hasPrice);
+    },
+    { message: '가격을 입력해주세요.', path: ['price'] },
+  );
+
+export type CreateJobFormInput = z.infer<typeof createJobFormSchema>;
+
 /* ─── Query Params ───────────────────────────────────────────── */
 
 export interface JobsQueryParams {

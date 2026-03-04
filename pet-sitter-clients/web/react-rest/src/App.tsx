@@ -15,7 +15,7 @@ import { DesignSystemPage } from './pages/design-system/DesignSystemPage';
 import { FavoritesPage } from './pages/favorites/FavoritesPage';
 import { JobDetailPage } from './pages/jobs/JobDetailPage';
 import { JobsPage } from './pages/jobs/JobsPage';
-import { JobWritePage } from './pages/jobs/JobWritePage';
+import { JobCreatePage } from './pages/jobs/JobCreatePage';
 import { ProfilePage } from './pages/profile/ProfilePage';
 import { PageAsyncBoundary } from './components/common/globalException/boundary';
 
@@ -46,7 +46,7 @@ function App() {
 
               {/* 구인공고 등록 — PetOwner 전용 */}
               <Route element={<RoleGuard allowedRoles={['PetOwner']} />}>
-                <Route path="/jobs/write" element={<JobWritePage />} />
+                <Route path="/jobs/write" element={<JobCreatePage />} />
               </Route>
 
               {/* 채팅 탭 */}
