@@ -141,6 +141,32 @@ export class PhotosService {
     });
   }
 
+  /**
+   * Job에 연결된 모든 사진(job 직접 연결 + pet 연결) 삭제
+   * DB 레코드 및 디스크 파일 모두 제거
+   */
+  async deleteByJobId(jobId: string): Promise<void> {
+    const photos = await this.prisma.photo.findMany({
+      where: {
+        OR: [
+          { job_id: jobId },
+          { pet: { job_id: jobId } },
+        ],
+      },
+      select: { id: true, file_name: true },
+    });
+
+    if (!photos.length) return;
+
+    await this.prisma.photo.deleteMany({
+      where: { id: { in: photos.map((p) => p.id) } },
+    });
+
+    for (const photo of photos) {
+      this.fileStorage.delete(photo.file_name);
+    }
+  }
+
   async deletePhoto(id: string, requesterId: string): Promise<void> {
     const photo = await this.prisma.photo.findUnique({ where: { id } });
 
