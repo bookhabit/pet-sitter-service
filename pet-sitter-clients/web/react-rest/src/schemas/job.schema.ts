@@ -58,6 +58,12 @@ export const pageInfoSchema = z.object({
 
 export type PageInfo = z.infer<typeof pageInfoSchema>;
 
+export const jobListSchema = z.object({
+  items: z.array(jobSchema),
+});
+
+export type JobList = z.infer<typeof jobListSchema>;
+
 export const paginatedJobsSchema = z.object({
   items: z.array(jobSchema),
   pageInfo: pageInfoSchema,

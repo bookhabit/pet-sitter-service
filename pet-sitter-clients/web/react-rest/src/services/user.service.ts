@@ -1,9 +1,9 @@
-import { z } from 'zod';
-
 import { privateApi } from '../api/axios-instance';
 import { http } from '../api/axios-instance';
-import { jobSchema } from '../schemas/job.schema';
-import { jobApplicationSchema } from '../schemas/job-application.schema';
+import { jobListSchema } from '../schemas/job.schema';
+import type { Job } from '../schemas/job.schema';
+import { jobApplicationListSchema } from '../schemas/job-application.schema';
+import type { JobApplication } from '../schemas/job-application.schema';
 import type { CreateUserInput, UpdateUserInput, User } from '../schemas/user.schema';
 import { userSchema } from '../schemas/user.schema';
 
@@ -30,14 +30,21 @@ const getUserWithToken = (id: string, token: string): Promise<User> =>
 const updateUser = (id: string, data: UpdateUserInput): Promise<User> =>
   http.put<User>(`/users/${id}`, data, userSchema);
 
-const deleteUser = (id: string): Promise<User> =>
-  http.delete<User>(`/users/${id}`, userSchema);
+const deleteUser = (id: string): Promise<User> => http.delete<User>(`/users/${id}`, userSchema);
 
-const getUserJobs = (id: string) =>
-  http.get(`/users/${id}/jobs`, undefined, z.array(jobSchema));
+const getUserJobs = async (id: string): Promise<Job[]> => {
+  const res = await http.get<{ items: Job[] }>(`/users/${id}/jobs`, undefined, jobListSchema);
+  return res.items;
+};
 
-const getUserJobApplications = (id: string) =>
-  http.get(`/users/${id}/job-applications`, undefined, z.array(jobApplicationSchema));
+const getUserJobApplications = async (id: string): Promise<JobApplication[]> => {
+  const res = await http.get<{ items: JobApplication[] }>(
+    `/users/${id}/job-applications`,
+    undefined,
+    jobApplicationListSchema,
+  );
+  return res.items;
+};
 
 export const userService = {
   signup,

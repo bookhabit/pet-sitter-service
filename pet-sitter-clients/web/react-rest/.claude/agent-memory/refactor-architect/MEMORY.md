@@ -32,6 +32,20 @@ When a sub-state array must stay in sync with an external count (e.g., pet index
 use `useEffect` watching the count and resize with `slice` / `Array.from` inside `setState`.
 Do NOT couple setPetFiles into append/remove handlers — that violates SRP by mixing concerns.
 
+### `http.get<T>` — Explicit Generic Required
+`http.get` in `src/api/axios-instance.ts` is a generic function `<T>(...): Promise<T>`.
+The Zod schema argument is runtime-only and does NOT influence TypeScript's inferred `T`.
+Omitting `<T>` causes `T = unknown`, which cascades to hook `data` being `unknown`.
+Pattern: ALWAYS write `http.get<ReturnType>(url, params, schema)` in service files.
+Example: `http.get<JobApplication[]>(url, undefined, z.array(jobApplicationSchema))`
+Explicit return type annotation on service function is also required: `: Promise<JobApplication[]>`
+
+### `EmptyBoundary` — Generic Component
+`src/components/common/globalException/boundary/EmptyBoundary.tsx`
+Was: `data: any[]` (violates no-any rule).
+Now: generic `Props<T>` with `data: T[] | null | undefined`.
+The `any[]` prop was masking type errors downstream — it accepted `unknown` silently.
+
 ## Common Violations Found
 - `as any` in setValue nested path workaround
 - `(error as { response?: { status?: number } }).response?.status` repeated across all form hooks
@@ -40,3 +54,5 @@ Do NOT couple setPetFiles into append/remove handlers — that violates SRP by m
 - Duplicate toggle-button JSX blocks in same file
 - `error={undefined}` passed explicitly (redundant)
 - Mixed file-state + form-state in a single hook (extracted to useJobPhotoFiles)
+- `http.get` called without `<T>` generic → `data` inferred as `unknown`
+- `EmptyBoundary.data` typed as `any[]` instead of generic `T[]`
