@@ -13,6 +13,7 @@ import { ChatPage } from './pages/chat/ChatPage';
 import { ChatRoomPage } from './pages/chat/ChatRoomPage';
 import { DesignSystemPage } from './pages/design-system/DesignSystemPage';
 import { FavoritesPage } from './pages/favorites/FavoritesPage';
+import { JobApplicationsPage } from './pages/jobs/JobApplicationsPage';
 import { JobDetailPage } from './pages/jobs/JobDetailPage';
 import { JobEditPage } from './pages/jobs/JobEditPage';
 import { JobsPage } from './pages/jobs/JobsPage';
@@ -45,10 +46,11 @@ function App() {
               <Route path="/jobs" element={<JobsPage />} />
               <Route path="/jobs/:jobId" element={<JobDetailPage />} />
 
-              {/* 구인공고 등록 / 수정 — PetOwner 전용 */}
+              {/* 구인공고 등록 / 수정 / 지원자 관리 — PetOwner 전용 */}
               <Route element={<RoleGuard allowedRoles={['PetOwner']} />}>
                 <Route path="/jobs/write" element={<JobCreatePage />} />
                 <Route path="/jobs/:jobId/edit" element={<JobEditPage />} />
+                <Route path="/jobs/:jobId/applications" element={<JobApplicationsPage />} />
               </Route>
 
               {/* 채팅 탭 */}

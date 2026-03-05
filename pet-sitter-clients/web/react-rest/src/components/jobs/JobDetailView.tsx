@@ -2,26 +2,50 @@ import { Badge, Button, Divider, Flex, Spacing, Text } from '@/design-system';
 import { Image } from '@/design-system/atoms/Image/Image';
 
 import type { Job } from '@/schemas/job.schema';
+import type { ApproveStatus } from '@/schemas/job-application.schema';
 import { formatDateTime, formatPrice } from '@/utils/format';
+
+import { ApplyButton } from './ApplyButton';
 
 interface Props {
   job: Job;
   isOwner: boolean;
+  /** 현재 유저가 PetSitter 역할을 가지고 있는지 여부 */
+  isPetSitter: boolean;
+  /** PetSitter의 현재 지원 상태. null이면 미지원 */
+  appliedStatus: ApproveStatus | null;
+  /** 지원 mutation 진행 중 */
+  isApplying: boolean;
+  /** 지원 mutation 에러 메시지 */
+  applyErrorMessage: string | null;
+  onApply: () => void;
   onDelete: () => void;
   onEdit: () => void;
   onNavigateBack: () => void;
+  /** PetOwner(작성자) 전용: 지원자 관리 페이지로 이동 */
+  onNavigateToApplications: () => void;
   isDeleting: boolean;
 }
 
 /**
  * [View] 구인공고 상세 — 순수 UI 표현만 담당
+ *
+ * - isOwner === true  → "지원자 관리" 버튼 + 수정/삭제 버튼 표시
+ * - isPetSitter && !isOwner → ApplyButton 표시
+ * - PetOwner이면서 공고 작성자가 아닌 경우 → 지원/관리 UI 미표시
  */
 export function JobDetailView({
   job,
   isOwner,
+  isPetSitter,
+  appliedStatus,
+  isApplying,
+  applyErrorMessage,
+  onApply,
   onDelete,
   onEdit,
   onNavigateBack,
+  onNavigateToApplications,
   isDeleting,
 }: Props) {
   return (
@@ -165,12 +189,42 @@ export function JobDetailView({
         </>
       )}
 
-      {/* 작성자 전용 버튼 */}
+      {/* PetSitter 전용: 지원하기 버튼 (작성자는 본인 공고에 지원 불가) */}
+      {isPetSitter && !isOwner && (
+        <>
+          <Spacing size={32} />
+          <Divider />
+          <Spacing size={24} />
+          <ApplyButton
+            appliedStatus={appliedStatus}
+            isApplying={isApplying}
+            errorMessage={applyErrorMessage}
+            onApply={onApply}
+          />
+        </>
+      )}
+
+      {/* PetOwner(작성자) 전용: 지원자 관리 페이지 이동 버튼 */}
       {isOwner && (
         <>
           <Spacing size={32} />
           <Divider />
           <Spacing size={24} />
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={onNavigateToApplications}
+            className="w-full"
+          >
+            지원자 관리
+          </Button>
+        </>
+      )}
+
+      {/* 작성자 전용: 수정 / 삭제 버튼 */}
+      {isOwner && (
+        <>
+          <Spacing size={12} />
           <Flex gap={12}>
             <Button variant="secondary" size="md" onClick={onEdit} className="flex-1">
               수정

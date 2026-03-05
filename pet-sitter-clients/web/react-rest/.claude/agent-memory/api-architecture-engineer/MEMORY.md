@@ -49,6 +49,36 @@
 - Status 403 → permission message, 404 → not found message
 - Upload errors caught in try/catch, set to uploadServerError state
 
+### Design System Constraints (confirmed)
+- `Text` color prop: only `'primary' | 'secondary' | 'white'` — use `className="text-danger"` for error colors
+- `Badge` variants: `'primary' | 'success' | 'warning' | 'danger' | 'neutral'`
+- `Flex` supports `as` prop: `'div' | 'section' | 'ul' | 'ol' | 'li'` etc.
+- `Button` has `isLoading` prop (shows Spinner + disables automatically)
+- Image component is at `@/design-system/atoms/Image/Image` (NOT in barrel index)
+
+### Auth Store
+- `useAuthStore((s) => s.user)` → `User | null`
+- `user.roles: UserRole[]` — check role with `.includes('PetSitter')` or `.includes('PetOwner')`
+
+### Boundary Components
+- All from `@/components/common/globalException/boundary`:
+  `EmptyBoundary`, `ErrorBoundary`, `QueryErrorBoundary`, `PageAsyncBoundary`
+- Exception view files pattern: `src/components/{feature}/exception/{Feature}LoadingView.tsx` etc.
+
+### SuspenseQuery Sub-Container Pattern
+When `useSuspenseQuery` must be conditional (e.g., only for PetOwner), extract it into a private
+sub-container function in the same file and render it conditionally wrapped in `Suspense + QueryErrorBoundary`.
+This avoids React's rules-of-hooks conditional call restriction.
+
+### Job Application Hooks (src/hooks/job-applications.ts)
+- `useJobApplicationsQuery(jobId)` — useSuspenseQuery, queryKey: `['job-applications', 'byJob', jobId]`
+- `useApplyJobMutation(jobId)` — mutationFn: `() => ...` (void variable, call with `mutate(undefined, ...)`)
+- `useUpdateJobApplicationMutation(jobId)` — mutationFn: `({ jobApplicationId, data }) => ...`
+
+### Modal System
+- `useOpenModal()` returns `open(id, props)`
+- Registry key `'confirm'` props: `{ title, message, confirmLabel, cancelLabel, variant, onConfirm }`
+
 ## Key File Paths
 - `src/services/job.service.ts` — jobService (getJob, createJob, updateJob, deleteJob)
 - `src/hooks/jobs.ts` — all job data/mutation hooks
