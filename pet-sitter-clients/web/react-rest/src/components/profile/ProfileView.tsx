@@ -7,6 +7,8 @@ interface Props {
   user: User;
   isMe: boolean;
   onEditClick: () => void;
+  /** !isMe일 때 표시하는 메시지 보내기 핸들러 */
+  onMessageClick: () => void;
 }
 
 /**
@@ -15,7 +17,7 @@ interface Props {
  * - 공통: 프로필 사진, 이름, 역할
  * - 본인(isMe)만: 이메일, 수정 버튼
  */
-export function ProfileView({ user, isMe, onEditClick }: Props) {
+export function ProfileView({ user, isMe, onEditClick, onMessageClick }: Props) {
   const profilePhotoUrl = user.photos[0]?.url ?? null;
   const roleLabel = user.roles.join(', ');
 
@@ -45,6 +47,11 @@ export function ProfileView({ user, isMe, onEditClick }: Props) {
         {isMe && (
           <Button variant="ghost" size="sm" onClick={onEditClick}>
             수정
+          </Button>
+        )}
+        {!isMe && (
+          <Button variant="ghost" size="sm" onClick={onMessageClick}>
+            메시지 보내기
           </Button>
         )}
       </Flex>

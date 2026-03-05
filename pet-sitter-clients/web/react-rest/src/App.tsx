@@ -10,7 +10,7 @@ import { MainLayout } from './layouts/MainLayout';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
 import { ChatPage } from './pages/chat/ChatPage';
-import { ChatRoomPage } from './pages/chat/ChatRoomPage';
+import { ChatRoomByApplicationPage } from './pages/chat/ChatRoomByApplicationPage';
 import { DesignSystemPage } from './pages/design-system/DesignSystemPage';
 import { FavoritesPage } from './pages/favorites/FavoritesPage';
 import { JobApplicationsPage } from './pages/jobs/JobApplicationsPage';
@@ -40,6 +40,15 @@ function App() {
 
         {/* Protected Routes — 인증 사용자 전용 (미인증 접근 시 /login 으로 리다이렉트) */}
         <Route element={<AuthGuard />}>
+          {/* 채팅방 — MainLayout(헤더/네비) 없이 전체 화면 단독 렌더링 */}
+          <Route element={<PageAsyncBoundary />}>
+            {/* jobApplicationId 기반 진입 (채팅 목록, 지원자 관리, 공고 상세, 프로필 메시지 버튼) */}
+            <Route
+              path="/chat/application/:jobApplicationId"
+              element={<ChatRoomByApplicationPage />}
+            />
+          </Route>
+
           <Route element={<MainLayout />}>
             <Route element={<PageAsyncBoundary />}>
               {/* 홈 탭 */}
@@ -55,7 +64,6 @@ function App() {
 
               {/* 채팅 탭 */}
               <Route path="/chat" element={<ChatPage />} />
-              <Route path="/chat/:roomId" element={<ChatRoomPage />} />
 
               {/* 즐겨찾기 탭 */}
               <Route path="/favorites" element={<FavoritesPage />} />

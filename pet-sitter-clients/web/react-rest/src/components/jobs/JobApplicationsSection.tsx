@@ -9,6 +9,7 @@ interface Props {
   updatingId: string | null;
   onApprove: (jobApplicationId: string) => void;
   onReject: (jobApplicationId: string) => void;
+  onMessage: (jobApplicationId: string) => void;
 }
 
 const STATUS_LABEL: Record<ApproveStatus, string> = {
@@ -28,7 +29,13 @@ const STATUS_BADGE_VARIANT: Record<ApproveStatus, 'neutral' | 'success' | 'dange
  *
  * 빈 배열 처리는 호출부(Container)의 EmptyBoundary에서 담당합니다.
  */
-export function JobApplicationsSection({ applications, updatingId, onApprove, onReject }: Props) {
+export function JobApplicationsSection({
+  applications,
+  updatingId,
+  onApprove,
+  onReject,
+  onMessage,
+}: Props) {
   return (
     <section>
       <Text as="h2" size="t2" className="font-bold">
@@ -56,27 +63,32 @@ export function JobApplicationsSection({ applications, updatingId, onApprove, on
                   </Flex>
                 </Flex>
 
-                {/* 검토 중인 지원자만 승인/거절 가능 */}
-                {isActionable && (
-                  <Flex gap={8}>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      isLoading={isUpdating}
-                      onClick={() => onApprove(application.id)}
-                    >
-                      승인
-                    </Button>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      isLoading={isUpdating}
-                      onClick={() => onReject(application.id)}
-                    >
-                      거절
-                    </Button>
-                  </Flex>
-                )}
+                <Flex gap={8}>
+                  {/* 검토 중인 지원자만 승인/거절 가능 */}
+                  {isActionable && (
+                    <>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        isLoading={isUpdating}
+                        onClick={() => onApprove(application.id)}
+                      >
+                        승인
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        isLoading={isUpdating}
+                        onClick={() => onReject(application.id)}
+                      >
+                        거절
+                      </Button>
+                    </>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => onMessage(application.id)}>
+                    메시지 보내기
+                  </Button>
+                </Flex>
               </Flex>
             </li>
           );

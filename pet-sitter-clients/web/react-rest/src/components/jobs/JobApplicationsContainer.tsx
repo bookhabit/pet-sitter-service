@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { useJobApplicationsQuery, useUpdateJobApplicationMutation } from '@/hooks/job-applications';
 import { useOpenModal } from '@/store/useModalStore';
@@ -23,6 +24,7 @@ interface Props {
  * useSuspenseQuery를 사용하므로 반드시 Suspense + QueryErrorBoundary 안에서 렌더링됩니다.
  */
 export function JobApplicationsContainer({ jobId }: Props) {
+  const navigate = useNavigate();
   const openModal = useOpenModal();
 
   const { data } = useJobApplicationsQuery(jobId);
@@ -65,6 +67,10 @@ export function JobApplicationsContainer({ jobId }: Props) {
     });
   };
 
+  const handleMessageClick = (jobApplicationId: string) => {
+    navigate(`/chat/application/${jobApplicationId}`);
+  };
+
   const applications = data.items;
 
   return (
@@ -74,6 +80,7 @@ export function JobApplicationsContainer({ jobId }: Props) {
         updatingId={isPending ? updatingId : null}
         onApprove={handleApproveClick}
         onReject={handleRejectClick}
+        onMessage={handleMessageClick}
       />
     </EmptyBoundary>
   );

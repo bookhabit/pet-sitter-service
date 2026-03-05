@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { useUserQuery } from '@/hooks/user';
 import { useProfileEditForm } from '@/hooks/forms/useProfileEditForm';
@@ -30,6 +31,7 @@ interface ProfileReadyProps {
  * 비-null 단언(!)이 필요 없고 Rules of Hooks도 위반하지 않는다.
  */
 function ProfileReady({ userId, isMe, user }: ProfileReadyProps) {
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
 
   const editForm = useProfileEditForm({
@@ -37,6 +39,12 @@ function ProfileReady({ userId, isMe, user }: ProfileReadyProps) {
     currentUser: user,
     onSuccess: () => setIsEditing(false),
   });
+
+  const handleMessageClick = () => {
+    // 프로필 페이지에서는 공통 지원 이력이 없으므로 채팅 목록 페이지로 이동
+    // 사용자가 목록에서 해당 상대방과의 채팅방을 선택한다
+    navigate('/chat');
+  };
 
   if (isEditing) {
     return (
@@ -54,7 +62,14 @@ function ProfileReady({ userId, isMe, user }: ProfileReadyProps) {
     );
   }
 
-  return <ProfileView user={user} isMe={isMe} onEditClick={() => setIsEditing(true)} />;
+  return (
+    <ProfileView
+      user={user}
+      isMe={isMe}
+      onEditClick={() => setIsEditing(true)}
+      onMessageClick={handleMessageClick}
+    />
+  );
 }
 
 /**

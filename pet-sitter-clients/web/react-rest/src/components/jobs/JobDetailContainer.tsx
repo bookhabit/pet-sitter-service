@@ -49,18 +49,33 @@ export function JobDetailContainer({ jobId }: Props) {
   // PetSitter 지원 후 보여줄 상태. null = 미지원 / 지원 완료 시 서버 응답으로 갱신
   const [appliedStatus, setAppliedStatus] = useState<ApproveStatus | null>(null);
   const [applyErrorMessage, setApplyErrorMessage] = useState<string | null>(null);
+  // 지원 성공 시 서버가 반환한 jobApplicationId (메시지 보내기 버튼에 사용)
+  const [jobApplicationId, setJobApplicationId] = useState<string | null>(null);
 
   const handleApplyConfirmed = () => {
     setApplyErrorMessage(null);
     applyJob(undefined, {
-      onSuccess: () => {
+      onSuccess: (application) => {
         // 지원 직후 'applying' 상태로 표시 (쿼리 갱신 전까지의 낙관적 표시)
         setAppliedStatus('applying');
+        // 서버가 반환한 jobApplicationId 저장 — 메시지 보내기 버튼에 사용
+        setJobApplicationId(application.id);
       },
       onError: (error) => {
-        setApplyErrorMessage(
-          error instanceof Error ? error.message : '지원 중 오류가 발생했습니다.',
-        );
+        // Axios 에러 구조: error.response.data.message
+        const axiosError = error as {
+          response?: { status?: number; data?: { message?: string } };
+        };
+        const status = axiosError.response?.status;
+        const serverMessage = axiosError.response?.data?.message;
+
+        if (status === 409) {
+          // 이미 지원한 공고 → 지원 완료 상태로 표시
+          setAppliedStatus('applying');
+          setApplyErrorMessage('이미 지원한 공고입니다.');
+        } else {
+          setApplyErrorMessage(serverMessage ?? '지원 중 오류가 발생했습니다.');
+        }
       },
     });
   };
@@ -116,12 +131,18 @@ export function JobDetailContainer({ jobId }: Props) {
     toggleFavorite(jobId);
   };
 
+  const handleMessageClick = () => {
+    if (!jobApplicationId) return;
+    navigate(`/chat/application/${jobApplicationId}`);
+  };
+
   return (
     <JobDetailView
       job={job}
       isOwner={isOwner}
       isPetSitter={isPetSitter}
       appliedStatus={appliedStatus}
+      jobApplicationId={jobApplicationId}
       isApplying={isApplying}
       applyErrorMessage={applyErrorMessage}
       onApply={handleApplyClick}
@@ -133,6 +154,7 @@ export function JobDetailContainer({ jobId }: Props) {
       isFavorited={isFavorited}
       isTogglingFavorite={isTogglingFavorite}
       onToggleFavorite={handleToggleFavorite}
+      onMessage={handleMessageClick}
     />
   );
 }

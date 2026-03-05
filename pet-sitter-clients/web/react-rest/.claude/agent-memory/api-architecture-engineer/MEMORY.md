@@ -124,3 +124,35 @@ Build as `const payload: UpdateUserInput = {}` then assign only non-empty fields
 ## Tailwind max-width
 Use `max-w-[60rem]` (arbitrary value) — `max-w-600` is NOT defined in the spacing scale.
 Confirmed pattern: `JobsPage.tsx`, `JobApplicationsPage.tsx`.
+
+## Chat Feature (implemented 2026-03-05)
+- Socket store: `src/store/useChatSocketStore.ts` (Zustand + socket.io-client)
+- Chat hooks: `src/hooks/chat.ts` — useChatRoomsQuery, useRefreshChatRooms, useGlobalChatNotifications, useLoadMoreMessages
+- Chat service: `src/services/chat.service.ts` — getChatRooms, getMessages
+- Chat schemas: `src/schemas/chat.schema.ts` — ChatMessage, ChatRoom, PaginatedMessages + socket payload types
+- Socket URL: `http://localhost:8000/chat`, auth: `{ token }`
+- Server sends messages newest-first; client must `.reverse()` for oldest-first display
+- `useGlobalChatNotifications()` is called in MainLayout (already wired) — keeps socket alive globally
+
+### Chat Entry Routes
+- `/chat` — ChatPage → ChatRoomsContainer (lists all rooms)
+- `/chat/:roomId` + location.state.jobApplicationId — ChatRoomPage → ChatRoomContainer (direct when chatRoomId known)
+- `/chat/application/:jobApplicationId` — ChatRoomByApplicationPage → connects socket → joinRoom → waits for currentRoomId → ChatRoomContainer
+- Route order in App.tsx: `/chat/application/:id` MUST come before `/chat/:roomId`
+
+### Chat Component Structure
+- `src/components/chat/ChatRoomsContainer.tsx` — [Container] useChatRoomsQuery + navigation
+- `src/components/chat/ChatRoomsList.tsx` — [View] renders list of ChatRoom items
+- `src/components/chat/ChatRoomContainer.tsx` — [Container] socket lifecycle + message state
+- `src/components/chat/ChatRoomView.tsx` — [View] message list + input bar
+- `src/components/chat/MessageBubble.tsx` — [View] single message bubble
+- `src/components/chat/exception/` — ChatRoomsLoadingView, ChatRoomsErrorView, ChatRoomsEmptyView
+
+### Chat Entry Button Locations
+- PetOwner → JobApplicationsSection: "메시지 보내기" button per application row → `/chat/application/${application.id}`
+- PetSitter → JobDetailView: shown when `appliedStatus !== null && jobApplicationId !== null` → `/chat/application/${jobApplicationId}`
+  - jobApplicationId captured in JobDetailContainer from applyJob mutation onSuccess callback
+- Profile page (other user): "메시지 보내기" → navigate('/chat') (no jobApplicationId available, user picks from list)
+
+### Spinner Size
+`Spinner` size prop is a number (pixels), not a string. Use `<Spinner size={20} />`.

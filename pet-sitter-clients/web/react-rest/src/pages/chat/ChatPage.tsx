@@ -1,76 +1,31 @@
-import { useNavigate } from 'react-router-dom';
+import { Suspense } from 'react';
 
-import { useChatRoomsQuery } from '@/hooks/chat';
+import { ChatRoomsContainer } from '@/components/chat/ChatRoomsContainer';
+import { ChatRoomsErrorView } from '@/components/chat/exception/ChatRoomsErrorView';
+import { ChatRoomsLoadingView } from '@/components/chat/exception/ChatRoomsLoadingView';
+import { QueryErrorBoundary } from '@/components/common/globalException/boundary';
+import { Spacing, Text } from '@/design-system';
 
+/**
+ * [Page] 채팅방 목록 페이지
+ *
+ * - 데이터 로직은 ChatRoomsContainer에 위임
+ * - loading / error 처리는 Suspense + QueryErrorBoundary가 담당
+ */
 export function ChatPage() {
-  const navigate = useNavigate();
-  const { data: rooms } = useChatRoomsQuery();
-
   return (
-    <div style={{ padding: '2.4rem', maxWidth: '60rem', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '2.4rem', fontWeight: 700, marginBottom: '2.4rem' }}>채팅방 목록</h1>
+    <div className="mx-auto max-w-[60rem] px-16 py-24">
+      <Text size="t1" as="h1" className="font-bold">
+        채팅방 목록
+      </Text>
 
-      {rooms.length === 0 && (
-        <p style={{ fontSize: '1.4rem', color: 'var(--grey500)' }}>
-          참여 중인 채팅방이 없습니다.
-        </p>
-      )}
+      <Spacing size={24} />
 
-      {rooms.map((room) => (
-        <div
-          key={room.id}
-          onClick={() =>
-            navigate(`/chat/${room.id}`, {
-              state: { jobApplicationId: room.job_application_id },
-            })
-          }
-          style={{
-            padding: '1.6rem',
-            backgroundColor: 'white',
-            borderRadius: '1.2rem',
-            border: '1px solid var(--grey200)',
-            marginBottom: '1.2rem',
-            cursor: 'pointer',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: '1.6rem', fontWeight: 600, marginBottom: '0.4rem' }}>
-              채팅방
-            </p>
-            <p
-              style={{
-                fontSize: '1.4rem',
-                color: 'var(--grey500)',
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {room.messages?.[0]?.content ?? '메시지가 없습니다.'}
-            </p>
-          </div>
-
-          {room.unreadCount > 0 && (
-            <span
-              style={{
-                backgroundColor: 'var(--blue500)',
-                color: 'white',
-                borderRadius: '999px',
-                padding: '0.2rem 0.8rem',
-                fontSize: '1.2rem',
-                fontWeight: 700,
-                minWidth: '2.4rem',
-                textAlign: 'center',
-              }}
-            >
-              {room.unreadCount}
-            </span>
-          )}
-        </div>
-      ))}
+      <QueryErrorBoundary fallback={ChatRoomsErrorView}>
+        <Suspense fallback={<ChatRoomsLoadingView />}>
+          <ChatRoomsContainer />
+        </Suspense>
+      </QueryErrorBoundary>
     </div>
   );
 }
