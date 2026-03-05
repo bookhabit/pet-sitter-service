@@ -2,28 +2,14 @@ import { Button, Flex, Spacing, Text, TextField } from '@/design-system';
 import { OptionSelector } from './OptionSelector';
 
 import type { JobFilters } from '@/hooks/forms/useJobFilters';
+import { SORT_OPTIONS, SPECIES_OPTIONS, type SortValue } from '@/utils/options';
+import type { PetSpecies } from '@/schemas/job.schema';
 
 interface Props {
   filters: JobFilters;
   onFilterChange: (key: keyof JobFilters, value: string) => void;
   onReset: () => void;
 }
-
-type SortValue = 'start_time_asc' | 'start_time_desc' | 'end_time_asc' | 'end_time_desc';
-type SpeciesValue = 'Dog' | 'Cat' | '';
-
-const SORT_OPTIONS: { value: SortValue; label: string }[] = [
-  { value: 'start_time_asc', label: '시작일 빠른순' },
-  { value: 'start_time_desc', label: '시작일 늦은순' },
-  { value: 'end_time_asc', label: '종료일 빠른순' },
-  { value: 'end_time_desc', label: '종료일 늦은순' },
-];
-
-const SPECIES_OPTIONS: { value: SpeciesValue; label: string }[] = [
-  { value: 'Dog', label: '강아지' },
-  { value: 'Cat', label: '고양이' },
-  { value: '', label: '전체' },
-];
 
 /**
  * [UI Component] 구인공고 목록 필터 패널
@@ -113,10 +99,10 @@ export function JobFilterPanel({ filters, onFilterChange, onReset }: Props) {
       <Spacing size={24} />
 
       {/* 반려동물 종 */}
-      <OptionSelector<SpeciesValue>
+      <OptionSelector<PetSpecies>
         label="반려동물 종"
         options={SPECIES_OPTIONS}
-        selectedValue={filters.petSpecies as SpeciesValue}
+        selectedValue={filters.petSpecies as PetSpecies}
         onSelect={(value) => onFilterChange('petSpecies', value)}
       />
 

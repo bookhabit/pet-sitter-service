@@ -7,20 +7,25 @@ import {
   PlusIcon,
   TrashIcon,
 } from '@/design-system/icons';
-import { useCreateJobs } from '@/hooks/forms/useCreateJobs';
+import { useEditJobs } from '@/hooks/forms/useEditJobs';
 
 import type { PetSpecies, PriceType } from '@/schemas/job.schema';
 
 import { OptionSelector } from './OptionSelector';
 import { PRICE_TYPE_OPTIONS, SPECIES_OPTIONS } from '@/utils/options';
 
+interface Props {
+  jobId: string;
+}
+
 /**
- * [Container + View] 구인공고 등록 폼 컴포넌트
+ * [Container + View] 구인공고 수정 폼 컴포넌트
  *
- * - 비즈니스 로직: useCreateJobs 위임
+ * - 비즈니스 로직: useEditJobs 위임
  * - 역할: UI 렌더링만 담당
+ * - JobCreateForm 과 동일한 구조이며 수정용 hook(useEditJobs)을 사용한다.
  */
-export default function JobCreateForm() {
+export default function JobEditForm({ jobId }: Props) {
   const {
     register,
     onSubmit,
@@ -41,7 +46,7 @@ export default function JobCreateForm() {
     petPreviewUrls,
     handlePetFileChange,
     removePetFile,
-  } = useCreateJobs();
+  } = useEditJobs(jobId);
 
   const isSubmitting = isPending || isUploadPending;
 
@@ -50,10 +55,10 @@ export default function JobCreateForm() {
       {/* 페이지 헤더 */}
       <Flex direction="column" gap={4} align="start">
         <Text size="t1" as="h1">
-          구인공고 등록
+          구인공고 수정
         </Text>
         <Text size="b2" color="secondary">
-          돌봄 일정과 반려동물 정보를 입력해주세요.
+          돌봄 일정과 반려동물 정보를 수정해주세요.
         </Text>
       </Flex>
 
@@ -361,7 +366,7 @@ export default function JobCreateForm() {
 
           {/* 제출 버튼 */}
           <Button type="submit" size="lg" isLoading={isSubmitting} className="w-full">
-            구인공고 등록
+            구인공고 수정
           </Button>
 
           <Spacing size={32} />

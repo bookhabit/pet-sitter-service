@@ -1,5 +1,3 @@
-import { useNavigate } from 'react-router-dom';
-
 import { Badge, Button, Divider, Flex, Spacing, Text } from '@/design-system';
 import { Image } from '@/design-system/atoms/Image/Image';
 
@@ -10,19 +8,26 @@ interface Props {
   job: Job;
   isOwner: boolean;
   onDelete: () => void;
+  onEdit: () => void;
+  onNavigateBack: () => void;
   isDeleting: boolean;
 }
 
 /**
  * [View] 구인공고 상세 — 순수 UI 표현만 담당
  */
-export function JobDetailView({ job, isOwner, onDelete, isDeleting }: Props) {
-  const navigate = useNavigate();
-
+export function JobDetailView({
+  job,
+  isOwner,
+  onDelete,
+  onEdit,
+  onNavigateBack,
+  isDeleting,
+}: Props) {
   return (
     <div className="mx-auto max-w-[60rem] px-16 py-24">
       {/* 뒤로가기 */}
-      <Button variant="ghost" size="sm" onClick={() => navigate('/jobs')}>
+      <Button variant="ghost" size="sm" onClick={onNavigateBack}>
         ← 목록으로
       </Button>
 
@@ -167,12 +172,7 @@ export function JobDetailView({ job, isOwner, onDelete, isDeleting }: Props) {
           <Divider />
           <Spacing size={24} />
           <Flex gap={12}>
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={() => navigate(`/jobs/${job.id}/edit`)}
-              className="flex-1"
-            >
+            <Button variant="secondary" size="md" onClick={onEdit} className="flex-1">
               수정
             </Button>
             <Button
