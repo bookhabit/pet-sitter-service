@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { Flex, Spacing, Spinner, Text } from '@/design-system';
+import { Flex, Spacing, Spinner } from '@/design-system';
 
 import { JobCard } from './JobCard';
 
@@ -11,6 +11,12 @@ interface Props {
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   onLoadMore: () => void;
+  /** 현재 유저가 PetSitter 역할을 가지고 있는지 여부 */
+  isPetSitter: boolean;
+  /** PetSitter의 즐겨찾기 jobId Set — O(1) 포함 여부 확인 */
+  favoriteJobIds: Set<string>;
+  /** 즐겨찾기 토글 핸들러 */
+  onToggleFavorite: (jobId: string) => void;
 }
 
 /**
@@ -18,7 +24,15 @@ interface Props {
  * 데이터 로직 없음, props 렌더링만 수행
  * Intersection Observer 기반 무한스크롤 적용
  */
-export function JobListView({ jobs, hasNextPage, isFetchingNextPage, onLoadMore }: Props) {
+export function JobListView({
+  jobs,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadMore,
+  isPetSitter,
+  favoriteJobIds,
+  onToggleFavorite,
+}: Props) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,10 +58,16 @@ export function JobListView({ jobs, hasNextPage, isFetchingNextPage, onLoadMore 
 
   return (
     <>
-      {/* 구인공고 그리드 — Figma: 3열 카드 레이아웃 */}
-      <div className="gap-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      {/* 구인공고 그리드 — Figma: 3열 카드 레이아웃, gap-16 */}
+      <div className="grid grid-cols-1 gap-16 sm:grid-cols-2 lg:grid-cols-3">
         {jobs.map((job) => (
-          <JobCard key={job.id} job={job} />
+          <JobCard
+            key={job.id}
+            job={job}
+            isPetSitter={isPetSitter}
+            isFavorited={favoriteJobIds.has(job.id)}
+            onToggleFavorite={onToggleFavorite}
+          />
         ))}
       </div>
 

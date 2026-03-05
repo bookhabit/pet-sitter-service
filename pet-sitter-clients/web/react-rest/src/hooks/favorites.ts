@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 
 import { favoriteService } from '@/services/favorite.service';
 
@@ -14,6 +14,21 @@ export function useMyFavoritesQuery() {
     queryKey: favoriteQueryKeys.myList(),
     queryFn: () => favoriteService.getMyFavorites(),
     staleTime: 1000 * 60 * 3,
+  });
+}
+
+/**
+ * [Data Hook] GET /favorites — 내 즐겨찾기 목록 (PetSitter 전용, 조건부 페치)
+ *
+ * isPetSitter가 false이면 API를 호출하지 않습니다.
+ * 목록 페이지처럼 PetSitter 여부를 먼저 판단한 뒤 선택적으로 데이터가 필요한 경우에 사용합니다.
+ */
+export function useMyFavoritesOptionalQuery(isPetSitter: boolean) {
+  return useQuery({
+    queryKey: favoriteQueryKeys.myList(),
+    queryFn: () => favoriteService.getMyFavorites(),
+    staleTime: 1000 * 60 * 3,
+    enabled: isPetSitter,
   });
 }
 

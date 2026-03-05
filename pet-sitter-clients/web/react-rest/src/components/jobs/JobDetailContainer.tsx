@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { useJobQuery, useDeleteJobMutation } from '@/hooks/jobs';
 import { useApplyJobMutation } from '@/hooks/job-applications';
+import { useMyFavoritesOptionalQuery, useToggleFavoriteMutation } from '@/hooks/favorites';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useOpenModal } from '@/store/useModalStore';
 
@@ -21,6 +22,7 @@ interface Props {
  *   - useJobQuery 호출 → 공고 데이터 확보
  *   - 작성자 여부(isOwner), 역할(isPetSitter) 판단
  *   - PetSitter 지원 mutation 상태 관리
+ *   - PetSitter 즐겨찾기 상태 + 토글 mutation 관리
  *   - PetOwner 지원자 관리 페이지 이동 핸들러 제공
  *   - JobDetailView에 데이터 + 핸들러 전달
  *
@@ -37,6 +39,12 @@ export function JobDetailContainer({ jobId }: Props) {
 
   const isOwner = job.creator_user_id === user?.id;
   const isPetSitter = user?.roles.includes('PetSitter') ?? false;
+
+  // 즐겨찾기 목록으로부터 현재 공고 포함 여부 판단 (PetSitter 전용)
+  const { data: favoritesData } = useMyFavoritesOptionalQuery(isPetSitter);
+  const isFavorited = favoritesData?.some((fav) => fav.id === jobId) ?? false;
+
+  const { mutate: toggleFavorite, isPending: isTogglingFavorite } = useToggleFavoriteMutation();
 
   // PetSitter 지원 후 보여줄 상태. null = 미지원 / 지원 완료 시 서버 응답으로 갱신
   const [appliedStatus, setAppliedStatus] = useState<ApproveStatus | null>(null);
@@ -104,6 +112,10 @@ export function JobDetailContainer({ jobId }: Props) {
     navigate(`/jobs/${jobId}/applications`);
   };
 
+  const handleToggleFavorite = () => {
+    toggleFavorite(jobId);
+  };
+
   return (
     <JobDetailView
       job={job}
@@ -118,6 +130,9 @@ export function JobDetailContainer({ jobId }: Props) {
       onNavigateBack={handleNavigateBack}
       onNavigateToApplications={handleNavigateToApplications}
       isDeleting={isDeleting}
+      isFavorited={isFavorited}
+      isTogglingFavorite={isTogglingFavorite}
+      onToggleFavorite={handleToggleFavorite}
     />
   );
 }

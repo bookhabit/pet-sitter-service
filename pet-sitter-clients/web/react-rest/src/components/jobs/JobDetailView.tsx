@@ -1,5 +1,6 @@
 import { Badge, Button, Divider, Flex, Spacing, Text } from '@/design-system';
 import { Image } from '@/design-system/atoms/Image/Image';
+import { HeartIcon } from '@/design-system/icons';
 
 import type { Job } from '@/schemas/job.schema';
 import type { ApproveStatus } from '@/schemas/job-application.schema';
@@ -25,13 +26,19 @@ interface Props {
   /** PetOwner(작성자) 전용: 지원자 관리 페이지로 이동 */
   onNavigateToApplications: () => void;
   isDeleting: boolean;
+  /** 이 공고가 현재 즐겨찾기 되어 있는지 여부 */
+  isFavorited: boolean;
+  /** 즐겨찾기 토글 mutation 진행 중 */
+  isTogglingFavorite: boolean;
+  /** PetSitter 전용: 즐겨찾기 토글 핸들러 */
+  onToggleFavorite: () => void;
 }
 
 /**
  * [View] 구인공고 상세 — 순수 UI 표현만 담당
  *
  * - isOwner === true  → "지원자 관리" 버튼 + 수정/삭제 버튼 표시
- * - isPetSitter && !isOwner → ApplyButton 표시
+ * - isPetSitter && !isOwner → ApplyButton + HeartIcon 즐겨찾기 버튼 표시
  * - PetOwner이면서 공고 작성자가 아닌 경우 → 지원/관리 UI 미표시
  */
 export function JobDetailView({
@@ -47,6 +54,9 @@ export function JobDetailView({
   onNavigateBack,
   onNavigateToApplications,
   isDeleting,
+  isFavorited,
+  isTogglingFavorite,
+  onToggleFavorite,
 }: Props) {
   return (
     <div className="mx-auto max-w-[60rem] px-16 py-24">
@@ -57,14 +67,29 @@ export function JobDetailView({
 
       <Spacing size={24} />
 
-      {/* 헤더: 돌봄 내용 + 등록일 */}
-      <Flex direction="column" gap={8}>
-        <Text as="h1" size="t1" className="font-bold">
-          {job.activity}
-        </Text>
-        <Text size="caption" color="secondary">
-          등록일: {formatDateTime(job.createdAt)}
-        </Text>
+      {/* 헤더: 돌봄 내용 + 등록일 + (PetSitter) 즐겨찾기 버튼 */}
+      <Flex justify="between" align="start" gap={12}>
+        <Flex direction="column" gap={8} className="flex-1">
+          <Text as="h1" size="t1" className="font-bold">
+            {job.activity}
+          </Text>
+          <Text size="caption" color="secondary">
+            등록일: {formatDateTime(job.createdAt)}
+          </Text>
+        </Flex>
+
+        {/* PetSitter 전용 즐겨찾기 토글 버튼 */}
+        {isPetSitter && (
+          <button
+            type="button"
+            aria-label={isFavorited ? '즐겨찾기 제거' : '즐겨찾기 추가'}
+            disabled={isTogglingFavorite}
+            onClick={onToggleFavorite}
+            className="shrink-0 rounded-full p-8 transition-colors hover:bg-grey100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <HeartIcon size={24} color={isFavorited ? 'var(--red500)' : 'var(--grey400)'} />
+          </button>
+        )}
       </Flex>
 
       <Spacing size={24} />

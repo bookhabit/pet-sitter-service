@@ -96,6 +96,15 @@ This avoids React's rules-of-hooks conditional call restriction.
 - `src/schemas/user.schema.ts` — User, UpdateUserInput, userSchema, photoSchema
 - `src/utils/get-http-error-status.ts` — HTTP status extractor
 
+## Favorites Feature (implemented 2026-03-05)
+- `src/hooks/favorites.ts` — `useMyFavoritesQuery` (suspense), `useMyFavoritesOptionalQuery(isPetSitter)` (regular useQuery with enabled), `useToggleFavoriteMutation`, `useRemoveFavoriteMutation`
+- `src/services/favorite.service.ts` — toggle (POST), getMyFavorites (GET → Job[]), remove (DELETE)
+- `src/components/favorites/` — FavoritesContainer + FavoritesSection + exception/{Empty,Loading,Error}View
+- `src/pages/favorites/FavoritesPage.tsx` — QueryErrorBoundary + Suspense wrapping FavoritesContainer
+- HeartIcon active color: `var(--red500)`, inactive: `var(--grey400)`, hover bg: `hover:bg-grey100`
+- List page: favorites fetched once in JobListContainer via `useMyFavoritesOptionalQuery`, derived Set passed to each JobCard
+- `useMyFavoritesOptionalQuery(isPetSitter: boolean)` — use this (not useSuspenseQuery) when role gates the fetch
+
 ## useQuery (non-suspense) Container Pattern
 When a page has NO Suspense boundary around a data section, use `useQuery` (not `useSuspenseQuery`).
 Handle states explicitly: `if (isPending) return <LoadingView />; if (isError || !user) return <ErrorView />;`
