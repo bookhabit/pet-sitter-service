@@ -85,7 +85,33 @@ This avoids React's rules-of-hooks conditional call restriction.
 - `src/hooks/forms/useCreateJobs.ts` — create form logic hook
 - `src/hooks/forms/useEditJobs.ts` — edit form logic hook
 - `src/hooks/forms/useJobPhotoFiles.ts` — photo file state
+- `src/hooks/forms/useProfileEditForm.ts` — profile edit logic hook
+- `src/hooks/user.ts` — useUserQuery, useUpdateUserMutation, useDeleteUserMutation
 - `src/components/jobs/JobCreateForm.tsx` — create form UI
 - `src/components/jobs/JobEditForm.tsx` — edit form UI
+- `src/components/profile/ProfileContainer.tsx` — profile card data + edit toggle
+- `src/components/profile/ProfileView.tsx` — profile card display (isMe branching)
+- `src/components/profile/ProfileEditForm.tsx` — profile edit form UI
 - `src/schemas/job.schema.ts` — Job, CreateJobInput, UpdateJobInput, CreateJobFormInput
+- `src/schemas/user.schema.ts` — User, UpdateUserInput, userSchema, photoSchema
 - `src/utils/get-http-error-status.ts` — HTTP status extractor
+
+## useQuery (non-suspense) Container Pattern
+When a page has NO Suspense boundary around a data section, use `useQuery` (not `useSuspenseQuery`).
+Handle states explicitly: `if (isPending) return <LoadingView />; if (isError || !user) return <ErrorView />;`
+ProfileContainer is the reference implementation.
+
+## Container Split for Dependent Hooks
+When hook B requires data from hook A (and A may be undefined during loading):
+- Outer component: calls hook A, guards loading/error, renders Inner only when data exists
+- Inner component (not exported): calls hook B safely with guaranteed non-null data
+- Avoids both non-null assertions and conditional hook calls
+Reference: `ProfileContainer` (outer) + `ProfileReady` (inner) in `ProfileContainer.tsx`
+
+## UpdateUserInput Payload Building
+Build as `const payload: UpdateUserInput = {}` then assign only non-empty fields.
+`z.union([z.string().validated..., z.literal('')])` pattern allows empty string in form while preserving type narrowing for payload exclusion check (`if (data.field !== '') payload.field = data.field`).
+
+## Tailwind max-width
+Use `max-w-[60rem]` (arbitrary value) — `max-w-600` is NOT defined in the spacing scale.
+Confirmed pattern: `JobsPage.tsx`, `JobApplicationsPage.tsx`.

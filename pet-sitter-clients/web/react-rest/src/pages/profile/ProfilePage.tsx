@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { Spacing } from '@/design-system';
+import { Button, Flex, Spacing, Text } from '@/design-system';
 import { QueryErrorBoundary } from '@/components/common/globalException/boundary';
 import { UserJobsContainer } from '@/components/profile/UserJobsContainer';
 import { UserApplicationsContainer } from '@/components/profile/UserApplicationsContainer';
@@ -9,6 +9,7 @@ import { UserJobsLoadingView } from '@/components/profile/exception/UserJobsLoad
 import { UserJobsErrorView } from '@/components/profile/exception/UserJobsErrorView';
 import { UserApplicationsLoadingView } from '@/components/profile/exception/UserApplicationsLoadingView';
 import { UserApplicationsErrorView } from '@/components/profile/exception/UserApplicationsErrorView';
+import { ProfileContainer } from '@/components/profile/ProfileContainer';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export function ProfilePage() {
@@ -26,36 +27,17 @@ export function ProfilePage() {
   const isPetSitter = user?.roles.includes('PetSitter') ?? false;
 
   return (
-    <div style={{ padding: '2.4rem', maxWidth: '60rem', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '2.4rem', fontWeight: 700, marginBottom: '0.8rem' }}>
-        {isMe ? '내 프로필' : `사용자 프로필 #${userId}`}
-      </h1>
+    <Flex direction="column" className="mx-auto max-w-[60rem] px-24 py-24">
+      <Text size="t1" as="h1" className="mb-8">
+        {isMe ? '내 프로필' : `사용자 프로필`}
+      </Text>
 
-      {/* 프로필 정보 카드 */}
-      <div
-        style={{
-          padding: '2.0rem',
-          backgroundColor: 'white',
-          borderRadius: '1.2rem',
-          border: '1px solid var(--grey200)',
-          marginBottom: '2.4rem',
-        }}
-      >
-        {isMe && user ? (
-          <>
-            <p style={{ fontSize: '1.8rem', fontWeight: 600, marginBottom: '0.4rem' }}>
-              {user.full_name}
-            </p>
-            <p style={{ fontSize: '1.4rem', color: 'var(--grey500)' }}>
-              역할: {user.roles.join(', ')}
-            </p>
-          </>
-        ) : (
-          <p style={{ fontSize: '1.4rem', color: 'var(--grey500)' }}>
-            [Prototype] 사용자 프로필 미구현
-          </p>
-        )}
-      </div>
+      <Spacing size={16} />
+
+      {/* 프로필 카드 — API 기반 조회 + 수정 */}
+      {resolvedUserId && <ProfileContainer userId={resolvedUserId} isMe={isMe} />}
+
+      <Spacing size={24} />
 
       {/* 역할별 목록 섹션 — 본인 프로필이고 userId가 확정된 경우에만 표시 */}
       {isMe && resolvedUserId && (
@@ -88,26 +70,18 @@ export function ProfilePage() {
 
       {/* 로그아웃 버튼 */}
       {isMe && (
-        <button
+        <Button
+          variant="danger"
+          size="lg"
+          className="w-full"
           onClick={() => {
             clearAuth();
             navigate('/login', { replace: true });
           }}
-          style={{
-            width: '100%',
-            padding: '1.6rem',
-            backgroundColor: 'white',
-            color: 'var(--red500, #ef4444)',
-            border: '1px solid var(--red500, #ef4444)',
-            borderRadius: '1.2rem',
-            fontSize: '1.6rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
         >
           로그아웃
-        </button>
+        </Button>
       )}
-    </div>
+    </Flex>
   );
 }
