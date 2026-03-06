@@ -1,5 +1,5 @@
 {
-  "name": "react-rest",
+  "name": "react-graphql",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -26,8 +26,8 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@tanstack/react-query": "^5.90.21",
-    "axios": "^1.13.5",
+    "@apollo/client": "^3.13.8",
+    "graphql": "^16.11.0",
     "clsx": "^2.1.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
