@@ -1,62 +1,104 @@
-import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useSuspenseQuery, useApolloClient } from '@apollo/client';
 
-import { favoriteService } from '@/services/favorite.service';
+import { GET_MY_FAVORITES } from '@/graphql/queries/favorites';
+import { TOGGLE_FAVORITE, REMOVE_FAVORITE } from '@/graphql/mutations/favorites';
 
-export const favoriteQueryKeys = {
-  myList: () => ['favorites', 'my'] as const,
-};
+import type { Job } from '@/schemas/job.schema';
+import type { ToggleFavoriteResult } from '@/schemas/favorite.schema';
+
+/* ─── Mutation 옵션 타입 ─────────────────────────────────────── */
+
+interface MutationOptions<TData = void> {
+  onSuccess?: (data: TData) => void;
+  onError?: (error: Error) => void;
+  onSettled?: () => void;
+}
 
 /**
  * [Data Hook] GET /favorites — 내 즐겨찾기 목록 (PetSitter 전용)
  */
 export function useMyFavoritesQuery() {
-  return useSuspenseQuery({
-    queryKey: favoriteQueryKeys.myList(),
-    queryFn: () => favoriteService.getMyFavorites(),
-    staleTime: 1000 * 60 * 3,
-  });
+  const { data } = useSuspenseQuery<{ myFavorites: Job[] }>(GET_MY_FAVORITES);
+  return { data: data?.myFavorites ?? [] };
 }
 
 /**
  * [Data Hook] GET /favorites — 내 즐겨찾기 목록 (PetSitter 전용, 조건부 페치)
  *
  * isPetSitter가 false이면 API를 호출하지 않습니다.
- * 목록 페이지처럼 PetSitter 여부를 먼저 판단한 뒤 선택적으로 데이터가 필요한 경우에 사용합니다.
  */
 export function useMyFavoritesOptionalQuery(isPetSitter: boolean) {
-  return useQuery({
-    queryKey: favoriteQueryKeys.myList(),
-    queryFn: () => favoriteService.getMyFavorites(),
-    staleTime: 1000 * 60 * 3,
-    enabled: isPetSitter,
+  const { data, loading, error } = useQuery<{ myFavorites: Job[] }>(GET_MY_FAVORITES, {
+    skip: !isPetSitter,
   });
+
+  return { data: data?.myFavorites ?? undefined, loading, error };
 }
 
 /**
  * [Mutation Hook] POST /favorites — 즐겨찾기 토글 (PetSitter 전용)
  * 반환값 { added: true } → 추가, { added: false } → 제거
- * 성공 시 즐겨찾기 목록 캐시 무효화
+ * 성공 시 즐겨찾기 목록 캐시 갱신
  */
 export function useToggleFavoriteMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (jobId: string) => favoriteService.toggle(jobId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: favoriteQueryKeys.myList() });
+  const client = useApolloClient();
+
+  const [execute, { loading, error, data }] = useMutation<{
+    toggleFavorite: ToggleFavoriteResult;
+  }>(TOGGLE_FAVORITE, {
+    onCompleted: () => {
+      client.refetchQueries({ include: ['GetMyFavorites'] });
     },
   });
+
+  const mutate = (jobId: string) => {
+    execute({ variables: { job_id: jobId } }).catch(() => {});
+  };
+
+  const mutateAsync = async (jobId: string) => {
+    const result = await execute({ variables: { job_id: jobId } });
+    return result.data!.toggleFavorite;
+  };
+
+  return {
+    mutate,
+    mutateAsync,
+    isPending: loading,
+    error: error ?? null,
+    isSuccess: !!data && !loading,
+    data: data?.toggleFavorite ?? null,
+  };
 }
 
 /**
  * [Mutation Hook] DELETE /favorites/:jobId — 즐겨찾기 제거 (PetSitter 전용)
- * 성공 시 즐겨찾기 목록 캐시 무효화
+ * 성공 시 즐겨찾기 목록 캐시 갱신
  */
 export function useRemoveFavoriteMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (jobId: string) => favoriteService.remove(jobId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: favoriteQueryKeys.myList() });
+  const client = useApolloClient();
+
+  const [execute, { loading, error, data }] = useMutation(REMOVE_FAVORITE, {
+    onCompleted: () => {
+      client.refetchQueries({ include: ['GetMyFavorites'] });
     },
   });
+
+  const mutate = (jobId: string, options?: MutationOptions<void>) => {
+    execute({ variables: { job_id: jobId } })
+      .then(() => {
+        options?.onSuccess?.();
+        options?.onSettled?.();
+      })
+      .catch((err: Error) => {
+        options?.onError?.(err);
+        options?.onSettled?.();
+      });
+  };
+
+  return {
+    mutate,
+    isPending: loading,
+    error: error ?? null,
+    isSuccess: !!data && !loading,
+  };
 }

@@ -1,28 +1,20 @@
 import { useCallback, useEffect } from 'react';
-import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery, useApolloClient } from '@apollo/client';
 
 import { useAuthStore } from '@/store/useAuthStore';
-
-import { chatService } from '@/services/chat.service';
 import { useChatSocketStore } from '@/store/useChatSocketStore';
+import { GET_CHAT_ROOMS, GET_MESSAGES } from '@/graphql/queries/chat';
 
-/* ─── Query Keys ─────────────────────────────────────────────── */
+import type { ChatRoom, PaginatedMessages } from '@/schemas/chat.schema';
 
-export const chatQueryKeys = {
-  rooms: () => ['chat-rooms'] as const,
-};
-
-/* ─── REST Query ─────────────────────────────────────────────── */
+/* ─── GraphQL Query ──────────────────────────────────────────── */
 
 /**
  * [Data Hook] GET /chat-rooms — 내 채팅방 목록
  */
 export function useChatRoomsQuery() {
-  return useSuspenseQuery({
-    queryKey: chatQueryKeys.rooms(),
-    queryFn: () => chatService.getChatRooms(),
-    staleTime: 1000 * 60 * 1,
-  });
+  const { data } = useSuspenseQuery<{ chatRooms: ChatRoom[] }>(GET_CHAT_ROOMS);
+  return { data: data?.chatRooms ?? [] };
 }
 
 /* ─── Cache Refresh ──────────────────────────────────────────── */
@@ -32,10 +24,10 @@ export function useChatRoomsQuery() {
  * unreadCount 업데이트에 사용
  */
 export function useRefreshChatRooms() {
-  const queryClient = useQueryClient();
+  const client = useApolloClient();
   return useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: chatQueryKeys.rooms() });
-  }, [queryClient]);
+    client.refetchQueries({ include: ['GetChatRooms'] });
+  }, [client]);
 }
 
 /* ─── Global Notification Sync ──────────────────────────────── */
@@ -46,7 +38,7 @@ export function useRefreshChatRooms() {
  * - 채팅방 밖에서 받은 newMessageNotification 시 채팅방 목록 갱신
  */
 export function useGlobalChatNotifications() {
-  const queryClient = useQueryClient();
+  const client = useApolloClient();
   const token = useAuthStore((s) => s.token);
   const { connect, pendingNotificationRoomIds, clearPendingNotifications } =
     useChatSocketStore();
@@ -60,9 +52,9 @@ export function useGlobalChatNotifications() {
   // 채팅방 밖 알림 수신 시 채팅방 목록 캐시 갱신
   useEffect(() => {
     if (pendingNotificationRoomIds.length === 0) return;
-    queryClient.invalidateQueries({ queryKey: chatQueryKeys.rooms() });
+    client.refetchQueries({ include: ['GetChatRooms'] });
     clearPendingNotifications();
-  }, [pendingNotificationRoomIds, queryClient, clearPendingNotifications]);
+  }, [pendingNotificationRoomIds, client, clearPendingNotifications]);
 }
 
 /* ─── Infinite Scroll (메시지 더 보기) ───────────────────────── */
@@ -72,6 +64,7 @@ export function useGlobalChatNotifications() {
  * IntersectionObserver sentinel에서 호출
  */
 export function useLoadMoreMessages(chatRoomId: string) {
+  const client = useApolloClient();
   const { hasMore, isLoadingMore, nextCursor, prependMessages, setLoadingMore } =
     useChatSocketStore();
 
@@ -80,13 +73,19 @@ export function useLoadMoreMessages(chatRoomId: string) {
 
     setLoadingMore(chatRoomId, true);
     try {
-      const result = await chatService.getMessages(chatRoomId, {
-        cursor: nextCursor[chatRoomId] ?? undefined,
-        limit: 30,
+      const result = await client.query<{ messages: PaginatedMessages }>({
+        query: GET_MESSAGES,
+        variables: {
+          chatRoomId,
+          cursor: nextCursor[chatRoomId] ?? undefined,
+          limit: 30,
+        },
+        fetchPolicy: 'network-only',
       });
-      prependMessages(chatRoomId, result.messages, result.nextCursor);
+      const { messages, nextCursor: newCursor } = result.data.messages;
+      prependMessages(chatRoomId, messages, newCursor);
     } finally {
       setLoadingMore(chatRoomId, false);
     }
-  }, [chatRoomId, hasMore, isLoadingMore, nextCursor, prependMessages, setLoadingMore]);
+  }, [chatRoomId, client, hasMore, isLoadingMore, nextCursor, prependMessages, setLoadingMore]);
 }

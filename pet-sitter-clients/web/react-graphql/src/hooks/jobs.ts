@@ -1,87 +1,214 @@
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseInfiniteQuery,
-  useSuspenseQuery,
-} from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
+import { useMutation, useSuspenseQuery, useApolloClient } from '@apollo/client';
 
-import { jobService } from '@/services/job.service';
+import { GET_JOBS, GET_JOB } from '@/graphql/queries/jobs';
+import { CREATE_JOB, UPDATE_JOB, DELETE_JOB } from '@/graphql/mutations/jobs';
 
-import type { CreateJobInput, JobsQueryParams, UpdateJobInput } from '@/schemas/job.schema';
+import type { CreateJobInput, Job, JobsQueryParams, PaginatedJobs, UpdateJobInput } from '@/schemas/job.schema';
 
-export const jobQueryKeys = {
-  list: (params?: Omit<JobsQueryParams, 'cursor'>) => ['jobs', 'list', params] as const,
-  detail: (id: string) => ['jobs', 'detail', id] as const,
-};
+/* ─── Mutation 옵션 타입 ─────────────────────────────────────── */
+
+interface MutationOptions<TData = void> {
+  onSuccess?: (data: TData) => void;
+  onError?: (error: Error) => void;
+  onSettled?: () => void;
+}
+
+/* ─── 쿼리 변수 변환 헬퍼 ─────────────────────────────────────── */
+
+/** REST QueryParams(snake_case + bracket 표기) → GraphQL 변수로 변환 */
+function toGqlVariables(params?: Omit<JobsQueryParams, 'cursor'>) {
+  return {
+    limit: params?.limit,
+    activity: params?.activity,
+    sort: params?.sort,
+    start_time_before: params?.start_time_before,
+    start_time_after: params?.start_time_after,
+    end_time_before: params?.end_time_before,
+    end_time_after: params?.end_time_after,
+    pets_age_below: params?.['pets[age_below]'],
+    pets_age_above: params?.['pets[age_above]'],
+    pets_species: params?.['pets[species]'],
+    min_price: params?.min_price,
+    max_price: params?.max_price,
+  };
+}
+
+/* ─── useJobsQuery ───────────────────────────────────────────── */
 
 /**
  * [Data Hook] GET /jobs — 커서 기반 무한 스크롤 구인공고 목록
  *
- * TanStack Query useInfiniteQuery를 사용해 페이지네이션을 관리합니다.
- * pageParam = endCursor (서버 응답의 pageInfo.endCursor)
+ * Apollo useSuspenseQuery + fetchMore를 사용합니다.
+ * InMemoryCache의 jobs field merge 정책이 items를 자동으로 누적합니다.
+ *
+ * 컴포넌트 호환성: TanStack InfiniteQuery와 동일한 인터페이스 제공
+ * - data.pages[0].items = 누적된 모든 공고
+ * - fetchNextPage, hasNextPage, isFetchingNextPage
  */
 export function useJobsQuery(params?: Omit<JobsQueryParams, 'cursor'>) {
-  return useSuspenseInfiniteQuery({
-    queryKey: jobQueryKeys.list(params),
-    queryFn: ({ pageParam }) => jobService.getJobs({ ...params, cursor: pageParam }),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) =>
-      lastPage.pageInfo.hasNextPage ? (lastPage.pageInfo.endCursor ?? undefined) : undefined,
-    staleTime: 1000 * 60 * 3,
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+
+  const { data, fetchMore } = useSuspenseQuery<{ jobs: PaginatedJobs }>(GET_JOBS, {
+    variables: toGqlVariables(params),
   });
+
+  const hasNextPage = data?.jobs?.pageInfo?.hasNextPage ?? false;
+
+  const fetchNextPage = useCallback(async () => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    setIsFetchingNextPage(true);
+    try {
+      await fetchMore({
+        variables: { cursor: data?.jobs?.pageInfo?.endCursor },
+      });
+    } finally {
+      setIsFetchingNextPage(false);
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchMore, data?.jobs?.pageInfo?.endCursor]);
+
+  // TanStack InfiniteQuery 호환 형태로 래핑
+  // Apollo cache merge가 items를 누적하므로 pages[0]에 전체 목록이 담김
+  return {
+    data: { pages: [data?.jobs] as PaginatedJobs[] },
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  };
 }
+
+/* ─── useJobQuery ────────────────────────────────────────────── */
 
 /**
  * [Data Hook] GET /jobs/:id — 구인공고 상세 조회
  */
 export function useJobQuery(id: string) {
-  return useSuspenseQuery({
-    queryKey: jobQueryKeys.detail(id),
-    queryFn: () => jobService.getJob(id),
-    staleTime: 1000 * 60 * 3,
+  const { data } = useSuspenseQuery<{ job: Job }>(GET_JOB, {
+    variables: { id },
   });
+
+  return { data: data?.job };
 }
+
+/* ─── useCreateJobMutation ───────────────────────────────────── */
 
 /**
  * [Mutation Hook] POST /jobs — 구인공고 등록 (PetOwner 전용)
- * 성공 시 목록 캐시 무효화
+ * 성공 시 목록 캐시 갱신
  */
 export function useCreateJobMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateJobInput) => jobService.createJob(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs', 'list'] });
+  const client = useApolloClient();
+
+  const [execute, { loading, error, data }] = useMutation<{ createJob: Job }>(CREATE_JOB, {
+    onCompleted: () => {
+      client.refetchQueries({ include: ['GetJobs'] });
     },
   });
+
+  const mutate = (input: CreateJobInput, options?: MutationOptions<Job>) => {
+    execute({ variables: input })
+      .then((result) => {
+        options?.onSuccess?.(result.data!.createJob);
+        options?.onSettled?.();
+      })
+      .catch((err: Error) => {
+        options?.onError?.(err);
+        options?.onSettled?.();
+      });
+  };
+
+  const mutateAsync = async (input: CreateJobInput) => {
+    const result = await execute({ variables: input });
+    return result.data!.createJob;
+  };
+
+  return {
+    mutate,
+    mutateAsync,
+    isPending: loading,
+    error: error ?? null,
+    isSuccess: !!data && !loading,
+    data: data?.createJob ?? null,
+  };
 }
+
+/* ─── useUpdateJobMutation ───────────────────────────────────── */
 
 /**
  * [Mutation Hook] PUT /jobs/:id — 구인공고 수정 (작성자 또는 Admin)
- * 성공 시 상세/목록 캐시 무효화
+ * 성공 시 상세/목록 캐시 갱신
  */
 export function useUpdateJobMutation(id: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: UpdateJobInput) => jobService.updateJob(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: jobQueryKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: ['jobs', 'list'] });
+  const client = useApolloClient();
+
+  const [execute, { loading, error, data }] = useMutation<{ updateJob: Job }>(UPDATE_JOB, {
+    onCompleted: () => {
+      client.refetchQueries({ include: ['GetJob', 'GetJobs'] });
     },
   });
+
+  const mutate = (input: UpdateJobInput, options?: MutationOptions<Job>) => {
+    execute({ variables: { id, ...input } })
+      .then((result) => {
+        options?.onSuccess?.(result.data!.updateJob);
+        options?.onSettled?.();
+      })
+      .catch((err: Error) => {
+        options?.onError?.(err);
+        options?.onSettled?.();
+      });
+  };
+
+  const mutateAsync = async (input: UpdateJobInput) => {
+    const result = await execute({ variables: { id, ...input } });
+    return result.data!.updateJob;
+  };
+
+  return {
+    mutate,
+    mutateAsync,
+    isPending: loading,
+    error: error ?? null,
+    isSuccess: !!data && !loading,
+    data: data?.updateJob ?? null,
+  };
 }
+
+/* ─── useDeleteJobMutation ───────────────────────────────────── */
 
 /**
  * [Mutation Hook] DELETE /jobs/:id — 구인공고 삭제 (작성자 또는 Admin)
- * 성공 시 상세 캐시 제거 및 목록 캐시 무효화
+ * 성공 시 캐시에서 제거 및 목록 갱신
  */
 export function useDeleteJobMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => jobService.deleteJob(id),
-    onSuccess: (_, id) => {
-      queryClient.removeQueries({ queryKey: jobQueryKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: ['jobs', 'list'] });
-    },
-  });
+  const client = useApolloClient();
+
+  const [execute, { loading, error, data }] = useMutation<{ deleteJob: { id: string } }>(
+    DELETE_JOB,
+  );
+
+  const mutate = (jobId: string, options?: MutationOptions<void>) => {
+    execute({ variables: { id: jobId } })
+      .then((result) => {
+        const deletedId = result.data?.deleteJob?.id;
+        if (deletedId) {
+          client.cache.evict({ id: client.cache.identify({ __typename: 'Job', id: deletedId }) });
+          client.cache.gc();
+        }
+        client.refetchQueries({ include: ['GetJobs'] });
+        options?.onSuccess?.();
+        options?.onSettled?.();
+      })
+      .catch((err: Error) => {
+        options?.onError?.(err);
+        options?.onSettled?.();
+      });
+  };
+
+  return {
+    mutate,
+    isPending: loading,
+    error: error ?? null,
+    isSuccess: !!data && !loading,
+  };
 }
