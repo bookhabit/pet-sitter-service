@@ -29,6 +29,7 @@ export function JobListContainer() {
     limit: 10,
     ...toQueryParams(),
   });
+  console.log('JobListContainer - data:', data);
 
   const { data: favoritesData } = useMyFavoritesOptionalQuery(isPetSitter);
   const { mutate: toggleFavorite } = useToggleFavoriteMutation();

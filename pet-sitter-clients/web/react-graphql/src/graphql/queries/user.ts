@@ -58,7 +58,7 @@ const JOB_APPLICATION_FIELDS = `
  * GET /users/:id — 사용자 정보 조회
  */
 export const GET_USER = gql`
-  query GetUser($id: ID!) {
+  query GetUser($id: String!) {
     user(id: $id) {
       ${USER_FIELDS}
     }
@@ -69,7 +69,7 @@ export const GET_USER = gql`
  * GET /users/:id/jobs — 사용자가 등록한 공고 목록
  */
 export const GET_USER_JOBS = gql`
-  query GetUserJobs($userId: ID!) {
+  query GetUserJobs($userId: String!) {
     userJobs(userId: $userId) {
       ${JOB_FIELDS}
     }
@@ -80,7 +80,7 @@ export const GET_USER_JOBS = gql`
  * GET /users/:id/job-applications — 사용자가 지원한 공고 목록
  */
 export const GET_USER_JOB_APPLICATIONS = gql`
-  query GetUserJobApplications($userId: ID!) {
+  query GetUserJobApplications($userId: String!) {
     userJobApplications(userId: $userId) {
       ${JOB_APPLICATION_FIELDS}
     }
