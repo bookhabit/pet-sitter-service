@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 
-import { Badge, Button, Flex, Spacing, Text } from '@/design-system';
+import { Badge, Flex, Spacing, Text } from '@/design-system';
 import { HeartIcon } from '@/design-system/icons';
 
 import type { Job } from '@/schemas/job.schema';

@@ -1,4 +1,4 @@
-import { Button, Flex, Spacing, Text } from '@/design-system';
+import { Button, Flex, Text } from '@/design-system';
 import { Image } from '@/design-system/atoms/Image/Image';
 
 import type { User } from '@/schemas/user.schema';

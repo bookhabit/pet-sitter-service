@@ -39,4 +39,6 @@ export type ModalRegistry = {
  */
 export const MODAL_COMPONENTS = {
   confirm: ConfirmModal,
-} satisfies Record<keyof ModalRegistry, ComponentType<{ onClose?: () => void }>>;
+} satisfies {
+  [K in keyof ModalRegistry]: ComponentType<ModalRegistry[K] & { onClose?: () => void }>;
+};

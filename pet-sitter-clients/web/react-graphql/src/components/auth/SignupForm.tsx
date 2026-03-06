@@ -1,15 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 
 import { Button, Flex, Spacing, Text, TextField } from '@/design-system';
-import {
-  DogIcon,
-  EditIcon,
-  LockIcon,
-  MailIcon,
-  MapIcon,
-  PhoneIcon,
-  UserIcon,
-} from '@/design-system/icons';
+import { DogIcon, LockIcon, MailIcon, UserIcon } from '@/design-system/icons';
 import { useSignupForm } from '@/hooks/forms/useSignupForm';
 
 import type { UserRole } from '@/schemas/user.schema';

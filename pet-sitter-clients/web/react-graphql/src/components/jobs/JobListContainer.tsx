@@ -19,7 +19,7 @@ import JobListEmptyView from './exception/JobListEmptyView';
  * 절대 금지: JSX 스타일링 로직, 화면 구성 결정
  */
 export function JobListContainer() {
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const { filters, setFilter, resetFilters, toQueryParams } = useJobFilters();
 
   const user = useAuthStore((s) => s.user);

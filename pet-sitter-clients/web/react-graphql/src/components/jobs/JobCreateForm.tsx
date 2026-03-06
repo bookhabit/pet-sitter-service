@@ -9,7 +9,7 @@ import {
 } from '@/design-system/icons';
 import { useCreateJobs } from '@/hooks/forms/useCreateJobs';
 
-import type { PetSpecies, PriceType } from '@/schemas/job.schema';
+import type { PetSpecies } from '@/schemas/job.schema';
 
 import { OptionSelector } from './OptionSelector';
 import { PRICE_TYPE_OPTIONS, SPECIES_OPTIONS } from '@/utils/options';

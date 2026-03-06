@@ -24,7 +24,7 @@ export function UserJobsSection({ jobs }: Props) {
       <Flex direction="column" gap={12} as="ul">
         {jobs.map((job) => (
           <li key={job.id} style={{ listStyle: 'none' }}>
-            <JobCard job={job} />
+            <JobCard job={job} isPetSitter={false} isFavorited={false} onToggleFavorite={() => {}} />
           </li>
         ))}
       </Flex>

@@ -1,4 +1,4 @@
-import { BASE_URL } from '@/api/axios-instance';
+const BASE_URL = 'http://localhost:8000';
 
 export const getFullImageUrl = (path: string) => {
   if (!path) return '';

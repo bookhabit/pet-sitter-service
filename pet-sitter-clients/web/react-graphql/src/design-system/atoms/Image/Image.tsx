@@ -4,7 +4,6 @@ import { useState } from 'react';
 import type { ImgHTMLAttributes } from 'react';
 import { Skeleton } from '../Skeleton';
 import { ASSETS } from '@/design-system/images';
-import { BASE_URL } from '@/api/axios-instance';
 import { getFullImageUrl } from '@/utils/image';
 
 interface ImageProps extends ImgHTMLAttributes<HTMLImageElement> {

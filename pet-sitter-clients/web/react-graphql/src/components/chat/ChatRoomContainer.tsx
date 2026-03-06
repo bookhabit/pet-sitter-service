@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useApolloClient } from '@apollo/client';
 
 import { useLoadMoreMessages, useRefreshChatRooms } from '@/hooks/chat';
-import { chatService } from '@/services/chat.service';
+import { GET_MESSAGES } from '@/graphql/queries/chat';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useChatSocketStore } from '@/store/useChatSocketStore';
 
 import { ChatRoomView } from './ChatRoomView';
+
+import type { PaginatedMessages } from '@/schemas/chat.schema';
 
 interface Props {
   /** URL 파라미터에서 전달받은 채팅방 ID */
@@ -29,6 +32,7 @@ interface Props {
  */
 export function ChatRoomContainer({ roomId, jobApplicationId }: Props) {
   const navigate = useNavigate();
+  const client = useApolloClient();
   const { token, user } = useAuthStore();
 
   const {
@@ -51,14 +55,19 @@ export function ChatRoomContainer({ roomId, jobApplicationId }: Props) {
 
   const roomMessages = messages[roomId] ?? [];
 
-  /* ── 1. 초기 메시지 HTTP 로드 (소켓 연결/joinRoom은 Page에서 담당) ── */
+  /* ── 1. 초기 메시지 GraphQL 조회 (소켓 연결/joinRoom은 Page에서 담당) ── */
   useEffect(() => {
     if (!roomId) return;
 
     const fetchInitialMessages = async () => {
-      const result = await chatService.getMessages(roomId, { limit: 30 });
+      const result = await client.query<{ messages: PaginatedMessages }>({
+        query: GET_MESSAGES,
+        variables: { chatRoomId: roomId, limit: 30 },
+        fetchPolicy: 'network-only',
+      });
+      const { messages: msgs, nextCursor } = result.data.messages;
       // 서버는 최신→오래된 순으로 내려줌 → 화면 표시는 오래된→최신이므로 reverse
-      initMessages(roomId, [...result.messages].reverse(), result.nextCursor);
+      initMessages(roomId, [...msgs].reverse(), nextCursor);
     };
 
     void fetchInitialMessages();

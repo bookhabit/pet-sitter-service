@@ -9,7 +9,6 @@ import {
   MessageCircleIcon,
   UserIcon,
 } from '@/design-system/icons';
-import { Image } from '@/design-system/atoms/Image/Image';
 import { useLogoutMutation } from '@/hooks/auth';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -46,8 +45,6 @@ export function PCHeader() {
     : user?.roles.includes('PetOwner')
       ? '펫 오너'
       : '';
-
-  const avatarSrc = user?.photos[0]?.url ?? undefined;
 
   return (
     <header className="hidden border-b border-grey200 bg-white lg:block">
