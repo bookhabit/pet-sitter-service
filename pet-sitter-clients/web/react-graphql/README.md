@@ -1,13 +1,12 @@
-# React + GraphQL Client
+# React + REST API Client
 
-React (Vite) web application consuming the Pet Sitter Service GraphQL API.
+React (Vite) web application consuming the Pet Sitter Service REST API.
 
 ## Tech Stack
 - React
 - TypeScript
 - Vite
-- GraphQL
-- Apollo Client
+- REST API
 
 ## Features
 - User authentication
@@ -22,4 +21,4 @@ npm run dev
 ```
 
 ## API
-Connects to `http://localhost:3000/graphql` (GraphQL endpoint)
+Connects to `http://localhost:3000` (REST endpoints)
