@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useMutation, useApolloClient } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 
-import { LOGIN, LOGOUT } from '@/graphql/mutations/auth';
-import { CREATE_USER } from '@/graphql/mutations/user';
+import { LOGIN, REGISTER } from '@/graphql/mutations/auth';
 import { GET_USER } from '@/graphql/queries/user';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -14,7 +13,7 @@ import type { CreateUserInput, User } from '@/schemas/user.schema';
 
 /**
  * 1. mutation Login → { user_id, accessToken, refreshToken }
- * 2. client.query(GET_USER, token 직접 주입) → User
+ * 2. client.query(GET_USER, 새 토큰 직접 주입) → User
  * 3. setAuth(accessToken, refreshToken, user)
  */
 export function useLoginMutation() {
@@ -33,12 +32,12 @@ export function useLoginMutation() {
         login: { user_id: string; accessToken: string; refreshToken: string };
       }>({
         mutation: LOGIN,
-        variables: data,
+        variables: { data },
       });
 
       const { user_id, accessToken, refreshToken } = loginResult.data!.login;
 
-      // 새 토큰으로 직접 사용자 조회 (인터셉터 우회)
+      // 새 토큰으로 직접 사용자 조회 (authLink 우회)
       const userResult = await client.query<{ user: User }>({
         query: GET_USER,
         variables: { id: user_id },
@@ -61,27 +60,28 @@ export function useLoginMutation() {
 /* ─── useSignupMutation ──────────────────────────────────────── */
 
 /**
- * mutation CreateUser — 회원가입 후 로그인 페이지로 이동
+ * mutation Register — 회원가입 후 로그인 페이지로 이동
+ *
+ * 서버 스키마: register(data: RegisterInput!): UserModel!
  */
 export function useSignupMutation() {
   const navigate = useNavigate();
 
-  const [executeCreate, { loading, error }] = useMutation<
-    { createUser: User },
-    { email: string; full_name: string; password: string; roles: string[] }
-  >(CREATE_USER, {
+  const [executeRegister, { loading, error }] = useMutation<{ register: User }>(REGISTER, {
     onCompleted: () => {
       navigate('/login', { state: { signupSuccess: true } });
     },
   });
 
   const mutate = (data: CreateUserInput) => {
-    executeCreate({
+    executeRegister({
       variables: {
-        email: data.email,
-        full_name: data.full_name,
-        password: data.password,
-        roles: data.roles,
+        data: {
+          email: data.email,
+          full_name: data.full_name,
+          password: data.password,
+          roles: data.roles,
+        },
       },
     }).catch(() => {});
   };
@@ -92,27 +92,16 @@ export function useSignupMutation() {
 /* ─── useLogoutMutation ──────────────────────────────────────── */
 
 /**
- * mutation Logout — 서버 세션 삭제 후 클라이언트 상태 초기화
+ * 서버 스키마에 logout mutation이 없으므로 클라이언트 상태만 초기화
  */
 export function useLogoutMutation() {
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
 
-  const [executeLogout, { loading, error }] = useMutation(LOGOUT, {
-    onCompleted: () => {
-      clearAuth();
-      navigate('/login', { replace: true });
-    },
-    onError: () => {
-      // 서버 오류가 나도 클라이언트 상태는 초기화
-      clearAuth();
-      navigate('/login', { replace: true });
-    },
-  });
-
   const mutate = () => {
-    executeLogout().catch(() => {});
+    clearAuth();
+    navigate('/login', { replace: true });
   };
 
-  return { mutate, isPending: loading, error: error ?? null };
+  return { mutate, isPending: false, error: null };
 }

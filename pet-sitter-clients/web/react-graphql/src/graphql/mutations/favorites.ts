@@ -1,22 +1,16 @@
 import { gql } from '@apollo/client';
 
 /**
- * POST /favorites — 즐겨찾기 토글 (PetSitter 전용)
- * 반환값: { added: boolean }
+ * 즐겨찾기 토글 (PetSitter 전용)
+ * added: true → 추가, added: false → 제거
+ *
+ * 서버 스키마: toggleFavorite(jobId: ID!): ToggleFavoriteResult!
+ * 참고: removeFavorite는 스키마에 없음. 제거도 toggleFavorite으로 처리.
  */
 export const TOGGLE_FAVORITE = gql`
-  mutation ToggleFavorite($job_id: ID!) {
-    toggleFavorite(job_id: $job_id) {
+  mutation ToggleFavorite($jobId: ID!) {
+    toggleFavorite(jobId: $jobId) {
       added
     }
-  }
-`;
-
-/**
- * DELETE /favorites/:jobId — 즐겨찾기 제거 (PetSitter 전용, 204)
- */
-export const REMOVE_FAVORITE = gql`
-  mutation RemoveFavorite($job_id: ID!) {
-    removeFavorite(job_id: $job_id)
   }
 `;

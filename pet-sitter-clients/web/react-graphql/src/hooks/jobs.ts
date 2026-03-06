@@ -16,28 +16,52 @@ interface MutationOptions<TData = void> {
 
 /* ─── 쿼리 변수 변환 헬퍼 ─────────────────────────────────────── */
 
-/** REST QueryParams(snake_case + bracket 표기) → GraphQL 변수로 변환 */
-function toGqlVariables(params?: Omit<JobsQueryParams, 'cursor'>) {
-  return {
-    limit: params?.limit,
+/**
+ * REST QueryParams(snake_case) → GraphQL 변수로 변환
+ *
+ * 서버 스키마: jobs(filter: JobFilterInput, pagination: PaginationInput)
+ * JobFilterInput 필드명은 camelCase (startTimeBefore, endTimeAfter 등)
+ * PetFilterInput 필드명: ageBelow, ageAbove, species
+ */
+function toGqlVariables(params?: Omit<JobsQueryParams, 'cursor'>, cursor?: string) {
+  const petsAge = params?.['pets[age_below]'] ?? params?.['pets[age_above]'];
+  const petsSpecies = params?.['pets[species]'];
+
+  const filter = {
     activity: params?.activity,
-    sort: params?.sort,
-    start_time_before: params?.start_time_before,
-    start_time_after: params?.start_time_after,
-    end_time_before: params?.end_time_before,
-    end_time_after: params?.end_time_after,
-    pets_age_below: params?.['pets[age_below]'],
-    pets_age_above: params?.['pets[age_above]'],
-    pets_species: params?.['pets[species]'],
-    min_price: params?.min_price,
-    max_price: params?.max_price,
+    startTimeBefore: params?.start_time_before,
+    startTimeAfter: params?.start_time_after,
+    endTimeBefore: params?.end_time_before,
+    endTimeAfter: params?.end_time_after,
+    minPrice: params?.min_price,
+    maxPrice: params?.max_price,
+    ...(petsAge !== undefined || petsSpecies !== undefined
+      ? {
+          pets: {
+            ageBelow: params?.['pets[age_below]'],
+            ageAbove: params?.['pets[age_above]'],
+            species: petsSpecies ? [petsSpecies] : undefined,
+          },
+        }
+      : {}),
+  };
+
+  // 모든 필터 값이 undefined면 filter 자체를 undefined로
+  const hasFilter = Object.values(filter).some((v) => v !== undefined);
+
+  return {
+    filter: hasFilter ? filter : undefined,
+    pagination: {
+      cursor,
+      limit: params?.limit,
+    },
   };
 }
 
 /* ─── useJobsQuery ───────────────────────────────────────────── */
 
 /**
- * [Data Hook] GET /jobs — 커서 기반 무한 스크롤 구인공고 목록
+ * [Data Hook] 커서 기반 무한스크롤 구인공고 목록
  *
  * Apollo useSuspenseQuery + fetchMore를 사용합니다.
  * InMemoryCache의 jobs field merge 정책이 items를 자동으로 누적합니다.
@@ -60,12 +84,12 @@ export function useJobsQuery(params?: Omit<JobsQueryParams, 'cursor'>) {
     setIsFetchingNextPage(true);
     try {
       await fetchMore({
-        variables: { cursor: data?.jobs?.pageInfo?.endCursor },
+        variables: toGqlVariables(params, data?.jobs?.pageInfo?.endCursor ?? undefined),
       });
     } finally {
       setIsFetchingNextPage(false);
     }
-  }, [hasNextPage, isFetchingNextPage, fetchMore, data?.jobs?.pageInfo?.endCursor]);
+  }, [hasNextPage, isFetchingNextPage, fetchMore, data?.jobs?.pageInfo?.endCursor, params]);
 
   // TanStack InfiniteQuery 호환 형태로 래핑
   // Apollo cache merge가 items를 누적하므로 pages[0]에 전체 목록이 담김
@@ -80,7 +104,7 @@ export function useJobsQuery(params?: Omit<JobsQueryParams, 'cursor'>) {
 /* ─── useJobQuery ────────────────────────────────────────────── */
 
 /**
- * [Data Hook] GET /jobs/:id — 구인공고 상세 조회
+ * [Data Hook] 구인공고 상세 조회
  */
 export function useJobQuery(id: string) {
   const { data } = useSuspenseQuery<{ job: Job }>(GET_JOB, {
@@ -93,8 +117,8 @@ export function useJobQuery(id: string) {
 /* ─── useCreateJobMutation ───────────────────────────────────── */
 
 /**
- * [Mutation Hook] POST /jobs — 구인공고 등록 (PetOwner 전용)
- * 성공 시 목록 캐시 갱신
+ * [Mutation Hook] 구인공고 등록 (PetOwner 전용)
+ * 서버 스키마: createJob(data: CreateJobInput!)
  */
 export function useCreateJobMutation() {
   const client = useApolloClient();
@@ -106,7 +130,7 @@ export function useCreateJobMutation() {
   });
 
   const mutate = (input: CreateJobInput, options?: MutationOptions<Job>) => {
-    execute({ variables: input })
+    execute({ variables: { data: input } })
       .then((result) => {
         options?.onSuccess?.(result.data!.createJob);
         options?.onSettled?.();
@@ -118,7 +142,7 @@ export function useCreateJobMutation() {
   };
 
   const mutateAsync = async (input: CreateJobInput) => {
-    const result = await execute({ variables: input });
+    const result = await execute({ variables: { data: input } });
     return result.data!.createJob;
   };
 
@@ -135,8 +159,8 @@ export function useCreateJobMutation() {
 /* ─── useUpdateJobMutation ───────────────────────────────────── */
 
 /**
- * [Mutation Hook] PUT /jobs/:id — 구인공고 수정 (작성자 또는 Admin)
- * 성공 시 상세/목록 캐시 갱신
+ * [Mutation Hook] 구인공고 수정 (작성자 또는 Admin)
+ * 서버 스키마: updateJob(data: UpdateJobInput!, id: String!)
  */
 export function useUpdateJobMutation(id: string) {
   const client = useApolloClient();
@@ -148,7 +172,7 @@ export function useUpdateJobMutation(id: string) {
   });
 
   const mutate = (input: UpdateJobInput, options?: MutationOptions<Job>) => {
-    execute({ variables: { id, ...input } })
+    execute({ variables: { id, data: input } })
       .then((result) => {
         options?.onSuccess?.(result.data!.updateJob);
         options?.onSettled?.();
@@ -160,7 +184,7 @@ export function useUpdateJobMutation(id: string) {
   };
 
   const mutateAsync = async (input: UpdateJobInput) => {
-    const result = await execute({ variables: { id, ...input } });
+    const result = await execute({ variables: { id, data: input } });
     return result.data!.updateJob;
   };
 
@@ -177,24 +201,20 @@ export function useUpdateJobMutation(id: string) {
 /* ─── useDeleteJobMutation ───────────────────────────────────── */
 
 /**
- * [Mutation Hook] DELETE /jobs/:id — 구인공고 삭제 (작성자 또는 Admin)
- * 성공 시 캐시에서 제거 및 목록 갱신
+ * [Mutation Hook] 구인공고 삭제 (작성자 또는 Admin)
+ * 서버 스키마: deleteJob(id: String!): Boolean!
+ * Boolean 반환이므로 jobId를 mutate 인수에서 별도로 캐시 evict에 활용
  */
 export function useDeleteJobMutation() {
   const client = useApolloClient();
 
-  const [execute, { loading, error, data }] = useMutation<{ deleteJob: { id: string } }>(
-    DELETE_JOB,
-  );
+  const [execute, { loading, error, data }] = useMutation<{ deleteJob: boolean }>(DELETE_JOB);
 
   const mutate = (jobId: string, options?: MutationOptions<void>) => {
     execute({ variables: { id: jobId } })
-      .then((result) => {
-        const deletedId = result.data?.deleteJob?.id;
-        if (deletedId) {
-          client.cache.evict({ id: client.cache.identify({ __typename: 'Job', id: deletedId }) });
-          client.cache.gc();
-        }
+      .then(() => {
+        client.cache.evict({ id: client.cache.identify({ __typename: 'JobModel', id: jobId }) });
+        client.cache.gc();
         client.refetchQueries({ include: ['GetJobs'] });
         options?.onSuccess?.();
         options?.onSettled?.();

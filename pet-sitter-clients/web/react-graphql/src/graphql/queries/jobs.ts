@@ -49,38 +49,14 @@ const JOB_FIELDS = `
 
 /**
  * GET /jobs — 커서 기반 무한스크롤 구인공고 목록
+ *
+ * 서버 스키마: jobs(filter: JobFilterInput, pagination: PaginationInput)
+ * - filter 필드명은 camelCase (endTimeAfter, startTimeBefore 등)
+ * - pagination: { cursor, limit }
  */
 export const GET_JOBS = gql`
-  query GetJobs(
-    $cursor: String
-    $limit: Int
-    $activity: String
-    $sort: String
-    $start_time_before: String
-    $start_time_after: String
-    $end_time_before: String
-    $end_time_after: String
-    $pets_age_below: Int
-    $pets_age_above: Int
-    $pets_species: String
-    $min_price: Int
-    $max_price: Int
-  ) {
-    jobs(
-      cursor: $cursor
-      limit: $limit
-      activity: $activity
-      sort: $sort
-      start_time_before: $start_time_before
-      start_time_after: $start_time_after
-      end_time_before: $end_time_before
-      end_time_after: $end_time_after
-      pets_age_below: $pets_age_below
-      pets_age_above: $pets_age_above
-      pets_species: $pets_species
-      min_price: $min_price
-      max_price: $max_price
-    ) {
+  query GetJobs($filter: JobFilterInput, $pagination: PaginationInput) {
+    jobs(filter: $filter, pagination: $pagination) {
       items {
         ${JOB_FIELDS}
       }
@@ -96,7 +72,7 @@ export const GET_JOBS = gql`
  * GET /jobs/:id — 구인공고 상세 조회
  */
 export const GET_JOB = gql`
-  query GetJob($id: ID!) {
+  query GetJob($id: String!) {
     job(id: $id) {
       ${JOB_FIELDS}
     }

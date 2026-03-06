@@ -14,33 +14,40 @@ interface MutationOptions<TData = void> {
 }
 
 /**
- * [Data Hook] GET /jobs/:jobId/job-applications — 공고별 지원 목록 조회
+ * [Data Hook] 공고별 지원 목록 조회
+ *
+ * 서버 스키마: jobApplicationsByJob(jobId: String!): [JobApplicationModel!]!
+ * 직접 배열 반환 → { items: [...] } 형태로 래핑하여 기존 컴포넌트 인터페이스 유지
  */
 export function useJobApplicationsQuery(jobId: string) {
-  const { data } = useSuspenseQuery<{ jobApplications: JobApplicationList }>(GET_JOB_APPLICATIONS, {
-    variables: { jobId },
-  });
+  const { data } = useSuspenseQuery<{ jobApplicationsByJob: JobApplication[] }>(
+    GET_JOB_APPLICATIONS,
+    { variables: { jobId } },
+  );
 
-  return { data: data?.jobApplications ?? { items: [] } };
+  return { data: { items: data?.jobApplicationsByJob ?? [] } as JobApplicationList };
 }
 
 /**
- * [Mutation Hook] POST /jobs/:jobId/job-applications — 구인공고 지원 (PetSitter 전용)
- * 성공 시 해당 공고의 지원 목록 캐시 갱신
+ * [Mutation Hook] 구인공고 지원 (PetSitter 전용)
+ * 서버 스키마: applyToJob(jobId: String!): JobApplicationModel!
  */
 export function useApplyJobMutation(jobId: string) {
   const client = useApolloClient();
 
-  const [execute, { loading, error, data }] = useMutation<{ applyJob: JobApplication }>(APPLY_JOB, {
-    onCompleted: () => {
-      client.refetchQueries({ include: ['GetJobApplications'] });
+  const [execute, { loading, error, data }] = useMutation<{ applyToJob: JobApplication }>(
+    APPLY_JOB,
+    {
+      onCompleted: () => {
+        client.refetchQueries({ include: ['GetJobApplications'] });
+      },
     },
-  });
+  );
 
   const mutate = (_?: undefined, options?: MutationOptions<JobApplication>) => {
     execute({ variables: { jobId } })
       .then((result) => {
-        options?.onSuccess?.(result.data!.applyJob);
+        options?.onSuccess?.(result.data!.applyToJob);
         options?.onSettled?.();
       })
       .catch((err: Error) => {
@@ -51,7 +58,7 @@ export function useApplyJobMutation(jobId: string) {
 
   const mutateAsync = async () => {
     const result = await execute({ variables: { jobId } });
-    return result.data!.applyJob;
+    return result.data!.applyToJob;
   };
 
   return {
@@ -60,19 +67,19 @@ export function useApplyJobMutation(jobId: string) {
     isPending: loading,
     error: error ?? null,
     isSuccess: !!data && !loading,
-    data: data?.applyJob ?? null,
+    data: data?.applyToJob ?? null,
   };
 }
 
 /**
- * [Mutation Hook] PUT /job-applications/:jobApplicationId — 지원 상태 수정 (공고 작성자만)
- * 성공 시 해당 공고의 지원 목록 캐시 갱신
+ * [Mutation Hook] 지원 상태 수정 (공고 작성자만)
+ * 서버 스키마: updateJobApplicationStatus(data: UpdateJobApplicationInput!, id: String!)
  */
 export function useUpdateJobApplicationMutation(_jobId: string) {
   const client = useApolloClient();
 
   const [execute, { loading, error, data }] = useMutation<{
-    updateJobApplication: JobApplication;
+    updateJobApplicationStatus: JobApplication;
   }>(UPDATE_JOB_APPLICATION, {
     onCompleted: () => {
       client.refetchQueries({ include: ['GetJobApplications'] });
@@ -83,9 +90,9 @@ export function useUpdateJobApplicationMutation(_jobId: string) {
     args: { jobApplicationId: string; data: UpdateJobApplicationInput },
     options?: MutationOptions<JobApplication>,
   ) => {
-    execute({ variables: { id: args.jobApplicationId, status: args.data.status } })
+    execute({ variables: { id: args.jobApplicationId, data: { status: args.data.status } } })
       .then((result) => {
-        options?.onSuccess?.(result.data!.updateJobApplication);
+        options?.onSuccess?.(result.data!.updateJobApplicationStatus);
         options?.onSettled?.();
       })
       .catch((err: Error) => {
@@ -94,9 +101,14 @@ export function useUpdateJobApplicationMutation(_jobId: string) {
       });
   };
 
-  const mutateAsync = async (args: { jobApplicationId: string; data: UpdateJobApplicationInput }) => {
-    const result = await execute({ variables: { id: args.jobApplicationId, status: args.data.status } });
-    return result.data!.updateJobApplication;
+  const mutateAsync = async (args: {
+    jobApplicationId: string;
+    data: UpdateJobApplicationInput;
+  }) => {
+    const result = await execute({
+      variables: { id: args.jobApplicationId, data: { status: args.data.status } },
+    });
+    return result.data!.updateJobApplicationStatus;
   };
 
   return {
@@ -105,6 +117,6 @@ export function useUpdateJobApplicationMutation(_jobId: string) {
     isPending: loading,
     error: error ?? null,
     isSuccess: !!data && !loading,
-    data: data?.updateJobApplication ?? null,
+    data: data?.updateJobApplicationStatus ?? null,
   };
 }

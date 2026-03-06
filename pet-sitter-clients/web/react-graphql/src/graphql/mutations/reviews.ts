@@ -12,18 +12,23 @@ const REVIEW_FIELDS = `
 `;
 
 /**
- * POST /jobs/:jobId/reviews — 리뷰 작성 (공고 등록자만)
+ * 리뷰 작성 (PetOwner 또는 PetSitter)
+ *
+ * 서버 스키마: createReview(data: CreateReviewInput!, jobId: ID!): ReviewModel!
+ * CreateReviewInput: { rating: Int!, comment?: String }
  */
 export const CREATE_REVIEW = gql`
-  mutation CreateReview($jobId: ID!, $rating: Int!, $comment: String) {
-    createReview(jobId: $jobId, rating: $rating, comment: $comment) {
+  mutation CreateReview($jobId: ID!, $data: CreateReviewInput!) {
+    createReview(jobId: $jobId, data: $data) {
       ${REVIEW_FIELDS}
     }
   }
 `;
 
 /**
- * DELETE /reviews/:id — 리뷰 삭제 (작성자만, 204)
+ * 리뷰 삭제 (작성자만)
+ *
+ * 서버 스키마: deleteReview(id: ID!): Boolean!
  */
 export const DELETE_REVIEW = gql`
   mutation DeleteReview($id: ID!) {

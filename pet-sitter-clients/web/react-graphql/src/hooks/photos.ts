@@ -1,97 +1,42 @@
-import { useState, useCallback } from 'react';
-import { useApolloClient } from '@apollo/client';
+import { useCallback } from 'react';
+import { useMutation, useApolloClient } from '@apollo/client';
 
-import { uploadWithFetch } from '@/api/apollo-client';
-import { photoSchema } from '@/schemas/user.schema';
-import { z } from 'zod';
+import {
+  UPLOAD_PHOTOS,
+  UPLOAD_USER_PHOTO,
+  UPLOAD_JOB_PHOTO,
+  UPLOAD_PET_PHOTO,
+  DELETE_PHOTO,
+} from '@/graphql/mutations/photos';
 
 import type { Photo } from '@/schemas/user.schema';
 
-/**
- * useMutation 인터페이스를 모방하는 파일 업로드 훅 팩토리
- *
- * GraphQL 파일 업로드(graphql-multipart-request-spec)는 apollo-upload-client가 필요하므로,
- * 사진 업로드는 uploadWithFetch 헬퍼를 통해 REST 엔드포인트에 직접 FormData POST를 수행합니다.
- */
-function usePhotoUpload<TArgs, TResult>(
-  fetcher: (args: TArgs) => Promise<TResult>,
-) {
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [data, setData] = useState<TResult | null>(null);
+/* ─── Base64 변환 헬퍼 ───────────────────────────────────────── */
 
-  const mutateAsync = useCallback(
-    async (args: TArgs): Promise<TResult> => {
-      setIsPending(true);
-      setError(null);
-      try {
-        const result = await fetcher(args);
-        setData(result);
-        return result;
-      } catch (err) {
-        const e = err instanceof Error ? err : new Error(String(err));
-        setError(e);
-        throw e;
-      } finally {
-        setIsPending(false);
-      }
-    },
-    [fetcher],
-  );
-
-  const mutate = (args: TArgs) => {
-    mutateAsync(args).catch(() => {});
-  };
-
-  return { mutate, mutateAsync, isPending, error, data, isSuccess: !!data && !isPending };
-}
-
-/* ─── 업로드 헬퍼 ────────────────────────────────────────────── */
-
-const uploadMany = async (files: File[]): Promise<Photo[]> => {
-  const formData = new FormData();
-  files.forEach((file) => formData.append('files', file));
-  const result = await uploadWithFetch<unknown[]>('/photos/upload', formData);
-  return z.array(photoSchema).parse(result);
-};
-
-const uploadUserPhoto = async ({ userId, file }: { userId: string; file: File }): Promise<Photo> => {
-  const formData = new FormData();
-  formData.append('file', file);
-  const result = await uploadWithFetch<unknown>(`/users/${userId}/photos`, formData);
-  return photoSchema.parse(result);
-};
-
-const uploadJobPhoto = async ({ jobId, file }: { jobId: string; file: File }): Promise<Photo> => {
-  const formData = new FormData();
-  formData.append('file', file);
-  const result = await uploadWithFetch<unknown>(`/jobs/${jobId}/photos`, formData);
-  return photoSchema.parse(result);
-};
-
-const uploadPetPhoto = async ({ petId, file }: { petId: string; file: File }): Promise<Photo> => {
-  const formData = new FormData();
-  formData.append('file', file);
-  const result = await uploadWithFetch<unknown>(`/pets/${petId}/photos`, formData);
-  return photoSchema.parse(result);
-};
-
-const deletePhoto = async (id: string): Promise<void> => {
-  const token = (await import('@/store/useAuthStore')).useAuthStore.getState().token;
-  const response = await fetch(`http://localhost:8000/photos/${id}`, {
-    method: 'DELETE',
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+/** File → base64 문자열 (data:... prefix 제거) */
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(',')[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
   });
-  if (!response.ok && response.status !== 204) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-};
+
+/** File → Base64FileInput */
+const fileToBase64Input = async (file: File) => ({
+  base64: await fileToBase64(file),
+  mimeType: file.type,
+  originalName: file.name,
+});
 
 /* ─── Mutation Hooks ─────────────────────────────────────────── */
 
 /**
- * [Mutation Hook] POST /photos/upload
- * 공고/반려동물 등록 전 photo_ids 획득 목적의 사전 업로드
+ * [Mutation Hook] 다중 사진 업로드 (entity 미연결)
+ * 서버 스키마: uploadPhotos(files: [Base64FileInput!]!): [PhotoModel!]!
  *
  * @example
  * const { mutateAsync } = useUploadPhotosMutation();
@@ -99,93 +44,155 @@ const deletePhoto = async (id: string): Promise<void> => {
  * const photoIds = photos.map((p) => p.id);
  */
 export function useUploadPhotosMutation() {
-  return usePhotoUpload(uploadMany);
+  const [execute, { loading, error, data }] = useMutation<{ uploadPhotos: Photo[] }>(
+    UPLOAD_PHOTOS,
+  );
+
+  const mutateAsync = useCallback(
+    async (files: File[]): Promise<Photo[]> => {
+      const filesInput = await Promise.all(files.map(fileToBase64Input));
+      const result = await execute({ variables: { files: filesInput } });
+      return result.data!.uploadPhotos;
+    },
+    [execute],
+  );
+
+  const mutate = (files: File[]) => {
+    mutateAsync(files).catch(() => {});
+  };
+
+  return {
+    mutate,
+    mutateAsync,
+    isPending: loading,
+    error: error ?? null,
+    data: data?.uploadPhotos ?? null,
+    isSuccess: !!data && !loading,
+  };
 }
 
 /**
- * [Mutation Hook] POST /users/:id/photos
- * 성공 시 users 관련 캐시 갱신
+ * [Mutation Hook] 사용자 프로필 사진 업로드
+ * 서버 스키마: uploadUserPhoto(file: Base64FileInput!, userId: String!): PhotoModel!
  */
 export function useUploadUserPhotoMutation(userId: string) {
   const client = useApolloClient();
-  const hook = usePhotoUpload(({ file }: { file: File }) =>
-    uploadUserPhoto({ userId, file }),
+  const [execute, { loading, error, data }] = useMutation<{ uploadUserPhoto: Photo }>(
+    UPLOAD_USER_PHOTO,
   );
 
-  const mutateAsync = async (file: File): Promise<Photo> => {
-    const result = await hook.mutateAsync({ file });
-    client.refetchQueries({ include: ['GetUser'] });
-    return result;
-  };
+  const mutateAsync = useCallback(
+    async (file: File): Promise<Photo> => {
+      const fileInput = await fileToBase64Input(file);
+      const result = await execute({ variables: { userId, file: fileInput } });
+      client.refetchQueries({ include: ['GetUser'] });
+      return result.data!.uploadUserPhoto;
+    },
+    [execute, userId, client],
+  );
 
   const mutate = (file: File) => {
     mutateAsync(file).catch(() => {});
   };
 
-  return { ...hook, mutate, mutateAsync };
+  return {
+    mutate,
+    mutateAsync,
+    isPending: loading,
+    error: error ?? null,
+    data: data?.uploadUserPhoto ?? null,
+    isSuccess: !!data && !loading,
+  };
 }
 
 /**
- * [Mutation Hook] POST /jobs/:id/photos
- * 성공 시 해당 공고 상세 캐시 갱신
+ * [Mutation Hook] 공고 사진 업로드
+ * 서버 스키마: uploadJobPhoto(file: Base64FileInput!, jobId: String!): PhotoModel!
  */
 export function useUploadJobPhotoMutation(jobId: string) {
   const client = useApolloClient();
-  const hook = usePhotoUpload(({ file }: { file: File }) =>
-    uploadJobPhoto({ jobId, file }),
+  const [execute, { loading, error, data }] = useMutation<{ uploadJobPhoto: Photo }>(
+    UPLOAD_JOB_PHOTO,
   );
 
-  const mutateAsync = async (file: File): Promise<Photo> => {
-    const result = await hook.mutateAsync({ file });
-    client.refetchQueries({ include: ['GetJob'] });
-    return result;
-  };
+  const mutateAsync = useCallback(
+    async (file: File): Promise<Photo> => {
+      const fileInput = await fileToBase64Input(file);
+      const result = await execute({ variables: { jobId, file: fileInput } });
+      client.refetchQueries({ include: ['GetJob'] });
+      return result.data!.uploadJobPhoto;
+    },
+    [execute, jobId, client],
+  );
 
   const mutate = (file: File) => {
     mutateAsync(file).catch(() => {});
   };
 
-  return { ...hook, mutate, mutateAsync };
+  return {
+    mutate,
+    mutateAsync,
+    isPending: loading,
+    error: error ?? null,
+    data: data?.uploadJobPhoto ?? null,
+    isSuccess: !!data && !loading,
+  };
 }
 
 /**
- * [Mutation Hook] POST /pets/:id/photos
- * 성공 시 해당 공고 상세 캐시 갱신 (반려동물은 공고에 종속)
+ * [Mutation Hook] 반려동물 사진 업로드
+ * 서버 스키마: uploadPetPhoto(file: Base64FileInput!, petId: String!): PhotoModel!
  */
 export function useUploadPetPhotoMutation(_jobId: string) {
   const client = useApolloClient();
-  const hook = usePhotoUpload(
-    ({ petId, file }: { petId: string; file: File }) => uploadPetPhoto({ petId, file }),
+  const [execute, { loading, error, data }] = useMutation<{ uploadPetPhoto: Photo }>(
+    UPLOAD_PET_PHOTO,
   );
 
-  const mutateAsync = async (args: { petId: string; file: File }): Promise<Photo> => {
-    const result = await hook.mutateAsync(args);
-    client.refetchQueries({ include: ['GetJob'] });
-    return result;
-  };
+  const mutateAsync = useCallback(
+    async (args: { petId: string; file: File }): Promise<Photo> => {
+      const fileInput = await fileToBase64Input(args.file);
+      const result = await execute({ variables: { petId: args.petId, file: fileInput } });
+      client.refetchQueries({ include: ['GetJob'] });
+      return result.data!.uploadPetPhoto;
+    },
+    [execute, client],
+  );
 
   const mutate = (args: { petId: string; file: File }) => {
     mutateAsync(args).catch(() => {});
   };
 
-  return { ...hook, mutate, mutateAsync };
+  return {
+    mutate,
+    mutateAsync,
+    isPending: loading,
+    error: error ?? null,
+    data: data?.uploadPetPhoto ?? null,
+    isSuccess: !!data && !loading,
+  };
 }
 
 /**
- * [Mutation Hook] DELETE /photos/:id
- * 삭제 후 목록/상세 캐시를 넓게 갱신
+ * [Mutation Hook] 사진 삭제
+ * 서버 스키마: deletePhoto(id: String!): Boolean!
  */
 export function useDeletePhotoMutation() {
   const client = useApolloClient();
-  const hook = usePhotoUpload(deletePhoto);
+  const [execute, { loading, error, data }] = useMutation<{ deletePhoto: boolean }>(DELETE_PHOTO);
 
   const mutate = (id: string) => {
-    hook.mutateAsync(id)
+    execute({ variables: { id } })
       .then(() => {
         client.refetchQueries({ include: ['GetJob', 'GetJobs', 'GetUser'] });
       })
       .catch(() => {});
   };
 
-  return { ...hook, mutate };
+  return {
+    mutate,
+    isPending: loading,
+    error: error ?? null,
+    isSuccess: !!data && !loading,
+  };
 }

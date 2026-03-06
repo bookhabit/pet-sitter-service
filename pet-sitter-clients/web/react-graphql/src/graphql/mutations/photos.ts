@@ -1,18 +1,79 @@
+import { gql } from '@apollo/client';
+
+const PHOTO_FIELDS = `
+  id
+  url
+  file_name
+  original_name
+  mime_type
+  size
+  uploader_id
+  user_id
+  job_id
+  pet_id
+  createdAt
+`;
+
 /**
- * 사진 업로드 Mutation
+ * 다중 사진 업로드 (entity 미연결)
  *
- * GraphQL 파일 업로드(graphql-multipart-request-spec)는 apollo-upload-client가
- * 필요하므로, 사진 업로드는 apollo-client.ts의 uploadWithFetch 헬퍼를 사용해
- * REST 엔드포인트에 직접 FormData POST를 수행합니다.
- *
- * 각 훅은 src/hooks/photos.ts에 구현되어 있으며,
- * 이 파일은 uploadWithFetch 사용 방식을 문서화하는 용도입니다.
- *
- * REST Endpoints:
- *   POST /photos/upload           → Photo[] (다중 업로드)
- *   POST /users/:id/photos        → Photo
- *   POST /jobs/:id/photos         → Photo
- *   POST /pets/:id/photos         → Photo
- *   DELETE /photos/:id            → 204
+ * 서버 스키마: uploadPhotos(files: [Base64FileInput!]!): [PhotoModel!]!
+ * Base64FileInput: { base64: String!, mimeType: String!, originalName: String! }
  */
-export {};
+export const UPLOAD_PHOTOS = gql`
+  mutation UploadPhotos($files: [Base64FileInput!]!) {
+    uploadPhotos(files: $files) {
+      ${PHOTO_FIELDS}
+    }
+  }
+`;
+
+/**
+ * 사용자 프로필 사진 업로드
+ *
+ * 서버 스키마: uploadUserPhoto(file: Base64FileInput!, userId: String!): PhotoModel!
+ */
+export const UPLOAD_USER_PHOTO = gql`
+  mutation UploadUserPhoto($userId: String!, $file: Base64FileInput!) {
+    uploadUserPhoto(userId: $userId, file: $file) {
+      ${PHOTO_FIELDS}
+    }
+  }
+`;
+
+/**
+ * 공고 사진 업로드
+ *
+ * 서버 스키마: uploadJobPhoto(file: Base64FileInput!, jobId: String!): PhotoModel!
+ */
+export const UPLOAD_JOB_PHOTO = gql`
+  mutation UploadJobPhoto($jobId: String!, $file: Base64FileInput!) {
+    uploadJobPhoto(jobId: $jobId, file: $file) {
+      ${PHOTO_FIELDS}
+    }
+  }
+`;
+
+/**
+ * 반려동물 사진 업로드
+ *
+ * 서버 스키마: uploadPetPhoto(file: Base64FileInput!, petId: String!): PhotoModel!
+ */
+export const UPLOAD_PET_PHOTO = gql`
+  mutation UploadPetPhoto($petId: String!, $file: Base64FileInput!) {
+    uploadPetPhoto(petId: $petId, file: $file) {
+      ${PHOTO_FIELDS}
+    }
+  }
+`;
+
+/**
+ * 사진 삭제
+ *
+ * 서버 스키마: deletePhoto(id: String!): Boolean!
+ */
+export const DELETE_PHOTO = gql`
+  mutation DeletePhoto($id: String!) {
+    deletePhoto(id: $id)
+  }
+`;

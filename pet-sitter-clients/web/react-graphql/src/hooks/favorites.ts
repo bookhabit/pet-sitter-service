@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useSuspenseQuery, useApolloClient } from '@apollo/client';
 
 import { GET_MY_FAVORITES } from '@/graphql/queries/favorites';
-import { TOGGLE_FAVORITE, REMOVE_FAVORITE } from '@/graphql/mutations/favorites';
+import { TOGGLE_FAVORITE } from '@/graphql/mutations/favorites';
 
 import type { Job } from '@/schemas/job.schema';
 import type { ToggleFavoriteResult } from '@/schemas/favorite.schema';
@@ -15,7 +15,7 @@ interface MutationOptions<TData = void> {
 }
 
 /**
- * [Data Hook] GET /favorites — 내 즐겨찾기 목록 (PetSitter 전용)
+ * [Data Hook] 내 즐겨찾기 목록 (PetSitter 전용)
  */
 export function useMyFavoritesQuery() {
   const { data } = useSuspenseQuery<{ myFavorites: Job[] }>(GET_MY_FAVORITES);
@@ -23,7 +23,7 @@ export function useMyFavoritesQuery() {
 }
 
 /**
- * [Data Hook] GET /favorites — 내 즐겨찾기 목록 (PetSitter 전용, 조건부 페치)
+ * [Data Hook] 내 즐겨찾기 목록 (PetSitter 전용, 조건부 페치)
  *
  * isPetSitter가 false이면 API를 호출하지 않습니다.
  */
@@ -36,9 +36,10 @@ export function useMyFavoritesOptionalQuery(isPetSitter: boolean) {
 }
 
 /**
- * [Mutation Hook] POST /favorites — 즐겨찾기 토글 (PetSitter 전용)
+ * [Mutation Hook] 즐겨찾기 토글 (PetSitter 전용)
  * 반환값 { added: true } → 추가, { added: false } → 제거
- * 성공 시 즐겨찾기 목록 캐시 갱신
+ *
+ * 서버 스키마: toggleFavorite(jobId: ID!): ToggleFavoriteResult!
  */
 export function useToggleFavoriteMutation() {
   const client = useApolloClient();
@@ -52,11 +53,11 @@ export function useToggleFavoriteMutation() {
   });
 
   const mutate = (jobId: string) => {
-    execute({ variables: { job_id: jobId } }).catch(() => {});
+    execute({ variables: { jobId } }).catch(() => {});
   };
 
   const mutateAsync = async (jobId: string) => {
-    const result = await execute({ variables: { job_id: jobId } });
+    const result = await execute({ variables: { jobId } });
     return result.data!.toggleFavorite;
   };
 
@@ -71,20 +72,24 @@ export function useToggleFavoriteMutation() {
 }
 
 /**
- * [Mutation Hook] DELETE /favorites/:jobId — 즐겨찾기 제거 (PetSitter 전용)
- * 성공 시 즐겨찾기 목록 캐시 갱신
+ * [Mutation Hook] 즐겨찾기 제거 (PetSitter 전용)
+ *
+ * 서버 스키마에 removeFavorite이 없으므로 toggleFavorite을 사용합니다.
+ * 즐겨찾기 목록 페이지에서 호출되므로 해당 공고는 이미 즐겨찾기 상태 → 토글 시 제거됩니다.
  */
 export function useRemoveFavoriteMutation() {
   const client = useApolloClient();
 
-  const [execute, { loading, error, data }] = useMutation(REMOVE_FAVORITE, {
+  const [execute, { loading, error, data }] = useMutation<{
+    toggleFavorite: ToggleFavoriteResult;
+  }>(TOGGLE_FAVORITE, {
     onCompleted: () => {
       client.refetchQueries({ include: ['GetMyFavorites'] });
     },
   });
 
   const mutate = (jobId: string, options?: MutationOptions<void>) => {
-    execute({ variables: { job_id: jobId } })
+    execute({ variables: { jobId } })
       .then(() => {
         options?.onSuccess?.();
         options?.onSettled?.();

@@ -63,7 +63,10 @@ export function useUserJobApplicationsQuery(id: string) {
 
 /* ─── Mutations ──────────────────────────────────────────────── */
 
-/** PUT /users/:id — 사용자 정보 수정, 성공 시 상세 캐시 갱신 */
+/**
+ * PUT /users/:id — 사용자 정보 수정
+ * 서버 스키마: updateUser(data: UpdateUserInput!, id: String!)
+ */
 export function useUpdateUserMutation(id: string) {
   const client = useApolloClient();
 
@@ -74,7 +77,7 @@ export function useUpdateUserMutation(id: string) {
   });
 
   const mutate = (input: UpdateUserInput, options?: MutationOptions<User>) => {
-    execute({ variables: { id, ...input } })
+    execute({ variables: { id, data: input } })
       .then((result) => {
         options?.onSuccess?.(result.data!.updateUser);
         options?.onSettled?.();
@@ -86,7 +89,7 @@ export function useUpdateUserMutation(id: string) {
   };
 
   const mutateAsync = async (input: UpdateUserInput) => {
-    const result = await execute({ variables: { id, ...input } });
+    const result = await execute({ variables: { id, data: input } });
     return result.data!.updateUser;
   };
 
@@ -100,23 +103,21 @@ export function useUpdateUserMutation(id: string) {
   };
 }
 
-/** DELETE /users/:id — 사용자 삭제, 성공 시 캐시 제거 */
+/**
+ * DELETE /users/:id — 사용자 삭제
+ * 서버 스키마: deleteUser(id: String!): Boolean!
+ */
 export function useDeleteUserMutation() {
   const client = useApolloClient();
 
-  const [execute, { loading, error, data }] = useMutation<{ deleteUser: { id: string } }>(
-    DELETE_USER,
-  );
+  const [execute, { loading, error, data }] = useMutation<{ deleteUser: boolean }>(DELETE_USER);
 
-  const mutate = (userId: string, options?: MutationOptions<{ id: string }>) => {
+  const mutate = (userId: string, options?: MutationOptions<void>) => {
     execute({ variables: { id: userId } })
-      .then((result) => {
-        const deletedId = result.data?.deleteUser?.id;
-        if (deletedId) {
-          client.cache.evict({ id: client.cache.identify({ __typename: 'User', id: deletedId }) });
-          client.cache.gc();
-        }
-        options?.onSuccess?.(result.data!.deleteUser);
+      .then(() => {
+        client.cache.evict({ id: client.cache.identify({ __typename: 'UserModel', id: userId }) });
+        client.cache.gc();
+        options?.onSuccess?.();
         options?.onSettled?.();
       })
       .catch((err: Error) => {

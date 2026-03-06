@@ -22,80 +22,40 @@ const JOB_FIELDS = `
 `;
 
 /**
- * POST /jobs — 구인공고 등록 (PetOwner 전용)
+ * 구인공고 등록 (PetOwner 전용)
+ *
+ * 서버 스키마: createJob(data: CreateJobInput!): JobModel!
+ * CreateJobInput: { activity, start_time, end_time, pets: [CreatePetInput!]!, photo_ids?, address?, ... }
  */
 export const CREATE_JOB = gql`
-  mutation CreateJob(
-    $start_time: String!
-    $end_time: String!
-    $activity: String!
-    $pets: [PetInput!]!
-    $photo_ids: [ID!]
-    $address: String
-    $latitude: Float
-    $longitude: Float
-    $price: Int
-    $price_type: String
-  ) {
-    createJob(
-      start_time: $start_time
-      end_time: $end_time
-      activity: $activity
-      pets: $pets
-      photo_ids: $photo_ids
-      address: $address
-      latitude: $latitude
-      longitude: $longitude
-      price: $price
-      price_type: $price_type
-    ) {
+  mutation CreateJob($data: CreateJobInput!) {
+    createJob(data: $data) {
       ${JOB_FIELDS}
     }
   }
 `;
 
 /**
- * PUT /jobs/:id — 구인공고 수정 (작성자 또는 Admin)
+ * 구인공고 수정 (작성자 또는 Admin)
+ *
+ * 서버 스키마: updateJob(data: UpdateJobInput!, id: String!): JobModel!
+ * UpdateJobInput에는 photo_ids 없음
  */
 export const UPDATE_JOB = gql`
-  mutation UpdateJob(
-    $id: ID!
-    $start_time: String
-    $end_time: String
-    $activity: String
-    $pets: [PetInput!]
-    $photo_ids: [ID!]
-    $address: String
-    $latitude: Float
-    $longitude: Float
-    $price: Int
-    $price_type: String
-  ) {
-    updateJob(
-      id: $id
-      start_time: $start_time
-      end_time: $end_time
-      activity: $activity
-      pets: $pets
-      photo_ids: $photo_ids
-      address: $address
-      latitude: $latitude
-      longitude: $longitude
-      price: $price
-      price_type: $price_type
-    ) {
+  mutation UpdateJob($id: String!, $data: UpdateJobInput!) {
+    updateJob(id: $id, data: $data) {
       ${JOB_FIELDS}
     }
   }
 `;
 
 /**
- * DELETE /jobs/:id — 구인공고 삭제 (작성자 또는 Admin)
+ * 구인공고 삭제 (작성자 또는 Admin)
+ *
+ * 서버 스키마: deleteJob(id: String!): Boolean!
  */
 export const DELETE_JOB = gql`
-  mutation DeleteJob($id: ID!) {
-    deleteJob(id: $id) {
-      id
-    }
+  mutation DeleteJob($id: String!) {
+    deleteJob(id: $id)
   }
 `;

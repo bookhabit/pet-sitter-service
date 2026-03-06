@@ -10,22 +10,27 @@ const JOB_APPLICATION_FIELDS = `
 `;
 
 /**
- * POST /jobs/:jobId/job-applications — 구인공고 지원 (PetSitter 전용)
+ * 구인공고 지원 (PetSitter 전용)
+ *
+ * 서버 스키마: applyToJob(jobId: String!): JobApplicationModel!
  */
 export const APPLY_JOB = gql`
-  mutation ApplyJob($jobId: ID!) {
-    applyJob(jobId: $jobId) {
+  mutation ApplyToJob($jobId: String!) {
+    applyToJob(jobId: $jobId) {
       ${JOB_APPLICATION_FIELDS}
     }
   }
 `;
 
 /**
- * PUT /job-applications/:jobApplicationId — 지원 상태 수정 (공고 작성자만)
+ * 지원 상태 수정 (공고 작성자만)
+ *
+ * 서버 스키마: updateJobApplicationStatus(data: UpdateJobApplicationInput!, id: String!): JobApplicationModel!
+ * UpdateJobApplicationInput: { status: ApproveStatus! }
  */
 export const UPDATE_JOB_APPLICATION = gql`
-  mutation UpdateJobApplication($id: ID!, $status: String!) {
-    updateJobApplication(id: $id, status: $status) {
+  mutation UpdateJobApplicationStatus($id: String!, $data: UpdateJobApplicationInput!) {
+    updateJobApplicationStatus(id: $id, data: $data) {
       ${JOB_APPLICATION_FIELDS}
     }
   }

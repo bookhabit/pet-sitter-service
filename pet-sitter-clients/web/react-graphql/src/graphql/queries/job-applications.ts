@@ -10,12 +10,15 @@ const JOB_APPLICATION_FIELDS = `
 `;
 
 /**
- * GET /jobs/:jobId/job-applications — 공고별 지원 목록 조회
+ * 공고별 지원 목록 조회
+ *
+ * 서버 스키마: jobApplicationsByJob(jobId: String!): [JobApplicationModel!]!
+ * 직접 배열 반환 (페이지네이션 없음)
  */
 export const GET_JOB_APPLICATIONS = gql`
-  query GetJobApplications($jobId: ID!) {
-    jobApplications(jobId: $jobId) {
-      items { ${JOB_APPLICATION_FIELDS} }
+  query GetJobApplications($jobId: String!) {
+    jobApplicationsByJob(jobId: $jobId) {
+      ${JOB_APPLICATION_FIELDS}
     }
   }
 `;

@@ -1,11 +1,14 @@
 import { gql } from '@apollo/client';
 
 /**
- * POST /sessions — 로그인
+ * 로그인
+ *
+ * 서버 스키마: login(data: LoginInput!): AuthPayload!
+ * LoginInput: { email: String!, password: String! }
  */
 export const LOGIN = gql`
-  mutation Login($email: String!, $password: String!) {
-    login(email: $email, password: $password) {
+  mutation Login($data: LoginInput!) {
+    login(data: $data) {
       user_id
       accessToken
       refreshToken
@@ -14,10 +17,21 @@ export const LOGIN = gql`
 `;
 
 /**
- * DELETE /sessions — 로그아웃
+ * 회원가입
+ *
+ * 서버 스키마: register(data: RegisterInput!): UserModel!
+ * RegisterInput: { email, full_name, password, roles: [Role!]! }
  */
-export const LOGOUT = gql`
-  mutation Logout {
-    logout
+export const REGISTER = gql`
+  mutation Register($data: RegisterInput!) {
+    register(data: $data) {
+      id
+      email
+      full_name
+      roles
+      photos { id url createdAt }
+      createdAt
+      updatedAt
+    }
   }
 `;

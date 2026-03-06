@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8000';
+import { BASE_URL } from '@/api/apollo-client';
 
 export const getFullImageUrl = (path: string) => {
   if (!path) return '';
