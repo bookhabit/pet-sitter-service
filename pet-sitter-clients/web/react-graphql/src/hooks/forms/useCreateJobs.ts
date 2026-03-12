@@ -54,10 +54,12 @@ export function useCreateJobs() {
     jobPreviewUrls: previewUrls,
     handleJobFileChange: handleFileChange,
     removeJobFile: removeFile,
+    jobFileSizeError,
     petFiles,
     petPreviewUrls,
     handlePetFileChange,
     removePetFile,
+    petFileSizeErrors,
   } = useJobPhotoFiles(watchPets.length);
 
   // createdJob is typed as Job by jobService.createJob — Job has id: string
@@ -159,9 +161,11 @@ export function useCreateJobs() {
     previewUrls,
     handleFileChange,
     removeFile,
+    jobFileSizeError,
     petFiles,
     petPreviewUrls,
     handlePetFileChange,
     removePetFile,
+    petFileSizeErrors,
   };
 }

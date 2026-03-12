@@ -8,6 +8,7 @@ import {
   TrashIcon,
 } from '@/design-system/icons';
 import { useCreateJobs } from '@/hooks/forms/useCreateJobs';
+import { MAX_FILE_SIZE_MB } from '@/hooks/forms/useJobPhotoFiles';
 
 import type { PetSpecies, PriceType } from '@/schemas/job.schema';
 
@@ -38,9 +39,11 @@ export default function JobCreateForm() {
     previewUrls,
     handleFileChange,
     removeFile,
+    jobFileSizeError,
     petPreviewUrls,
     handlePetFileChange,
     removePetFile,
+    petFileSizeErrors,
   } = useCreateJobs();
 
   const isSubmitting = isPending || isUploadPending;
@@ -214,6 +217,14 @@ export default function JobCreateForm() {
                         className="sr-only"
                         onChange={(e) => handlePetFileChange(index, e)}
                       />
+                      <Text size="caption" color="secondary" as="p" className="mt-4">
+                        파일당 최대 {MAX_FILE_SIZE_MB}MB
+                      </Text>
+                      {petFileSizeErrors[index] && (
+                        <span className="mt-4 block text-caption text-danger" role="alert">
+                          {petFileSizeErrors[index]}
+                        </span>
+                      )}
 
                       {(petPreviewUrls[index]?.length ?? 0) > 0 && (
                         <div className="mt-12 flex flex-wrap gap-8">
@@ -333,6 +344,14 @@ export default function JobCreateForm() {
               className="sr-only"
               onChange={handleFileChange}
             />
+            <Text size="caption" color="secondary" as="p" className="mt-4">
+              파일당 최대 {MAX_FILE_SIZE_MB}MB
+            </Text>
+            {jobFileSizeError && (
+              <span className="mt-4 block text-caption text-danger" role="alert">
+                {jobFileSizeError}
+              </span>
+            )}
 
             {previewUrls.length > 0 && (
               <div className="mt-16 flex flex-wrap gap-8">
