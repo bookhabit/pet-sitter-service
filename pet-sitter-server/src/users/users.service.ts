@@ -1,9 +1,12 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, JobApplication } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user-dto';
 import { UpdateUserDto } from './dto/update-user-dto';
 import { randomUUID } from 'crypto';
+
+const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS ?? 12);
 
 const USER_INCLUDE = {
   photos: true,
@@ -22,25 +25,24 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
 
-  private toCreateInput(dto: CreateUserDto): Prisma.UserCreateInput {
+  private async toCreateInput(dto: CreateUserDto): Promise<Prisma.UserCreateInput> {
     return {
       id: randomUUID(),
       email: dto.email,
       full_name: dto.full_name,
-      password: dto.password,
+      password: await bcrypt.hash(dto.password, BCRYPT_ROUNDS),
       roles: dto.roles,
     };
   }
-  
 
   async create(dto: CreateUserDto): Promise<UserWithPhotos> {
     const existsUser = await this.prisma.user.findUnique({
-      where: { email: dto.email }
-    })
+      where: { email: dto.email },
+    });
     if (existsUser) {
       throw new ConflictException('이미 존재하는 이메일입니다.');
     }
-    return this.prisma.user.create({ data: this.toCreateInput(dto), include: USER_INCLUDE });
+    return this.prisma.user.create({ data: await this.toCreateInput(dto), include: USER_INCLUDE });
   }
 
   async findOne(id: string): Promise<UserWithPhotos> {
@@ -80,7 +82,7 @@ export class UsersService {
       data: {
         ...(dto.email && { email: dto.email }),
         ...(dto.full_name && { full_name: dto.full_name }),
-        ...(dto.password && { password: dto.password }),
+        ...(dto.password && { password: await bcrypt.hash(dto.password, BCRYPT_ROUNDS) }),
         ...(dto.roles && { roles: dto.roles }),
       },
       include: USER_INCLUDE,

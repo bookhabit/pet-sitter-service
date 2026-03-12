@@ -74,7 +74,6 @@ privateApi.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        console.log('Access token expired. Attempting to refresh...');
         const refreshToken = useAuthStore.getState().refreshToken;
         // 토큰 갱신 API 호출
         const res = await publicApi.post('/sessions/refresh', { refreshToken });
@@ -103,15 +102,10 @@ privateApi.interceptors.response.use(
 );
 
 // 6. 핵심: Zod 검증 통합 추출 함수
+// 스키마가 있으면 반드시 검증 통과 — 실패 시 에러를 던져 타입 안정성 보장
 const validateResponse = <T>(res: AxiosResponse<T>, schema?: z.ZodSchema): T => {
   if (schema) {
-    try {
-      return schema.parse(res.data) as T;
-    } catch (e) {
-      console.error('🔥 ZOD VALIDATION FAILED');
-      console.error('response data →', res.data);
-      console.error(e);
-    }
+    return schema.parse(res.data) as T;
   }
   return res.data;
 };

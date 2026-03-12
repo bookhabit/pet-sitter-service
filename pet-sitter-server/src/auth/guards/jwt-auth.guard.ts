@@ -10,8 +10,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 import * as jwt from 'jsonwebtoken';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
-const ACCESS_SECRET =
-  process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'access-secret-key';
+// 환경변수 미설정 시 서버 시작 단계에서 즉시 실패
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} must be set in environment variables`);
+  return value;
+}
+
+const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
 
 interface AccessTokenPayload {
   userId: string;
@@ -64,25 +70,24 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid token type');
     }
 
-    // 사용자 조회
+    // 사용자 + 세션 단일 쿼리로 조회 (DB 2회 → 1회)
     const user = await this.prisma.user.findUnique({
       where: { id: decoded.userId },
+      include: { sessions: true },
     });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
-    // 세션 존재 여부 확인 (로그아웃 여부 체크)
-    const session = await this.prisma.session.findUnique({
-      where: { user_id: user.id },
-    });
-
-    if (!session) {
+    // sessions: Session[] — user_id가 unique이므로 0 또는 1개
+    if (user.sessions.length === 0) {
       throw new UnauthorizedException('Session not found — please log in again');
     }
 
-    request.user = user;
+    // request.user에는 sessions 제외한 순수 user만 전달
+    const { sessions: _, ...userWithoutSessions } = user;
+    request.user = userWithoutSessions;
     return true;
   }
 

@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import * as jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
@@ -6,15 +7,15 @@ import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 
-// 액세스 토큰과 리프레시 토큰에 각각 다른 시크릿 사용 가능
-const ACCESS_SECRET =
-  process.env.JWT_ACCESS_SECRET ||
-  process.env.JWT_SECRET ||
-  'access-secret-key';
-const REFRESH_SECRET =
-  process.env.JWT_REFRESH_SECRET ||
-  process.env.JWT_SECRET ||
-  'refresh-secret-key';
+// 환경변수 미설정 시 서버 시작 단계에서 즉시 실패
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} must be set in environment variables`);
+  return value;
+}
+
+const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
+const REFRESH_SECRET = requireEnv('JWT_REFRESH_SECRET');
 
 interface AccessTokenPayload {
   userId: string;
@@ -51,11 +52,13 @@ export class SessionsService {
       where: { email: dto.email },
     });
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
+    // 사용자 미존재 시에도 bcrypt 비교 수행 → 타이밍 공격 방지
+    const dummyHash = '$2b$12$invalidhashfortimingnormalization000000000000000000000';
+    const passwordValid = user
+      ? await bcrypt.compare(dto.password, user.password)
+      : await bcrypt.compare(dto.password, dummyHash).then(() => false);
 
-    if (user.password !== dto.password) {
+    if (!user || !passwordValid) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
