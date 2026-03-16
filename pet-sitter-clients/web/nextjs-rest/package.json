@@ -1,0 +1,43 @@
+{
+  "name": "nextjs-rest",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "icons:pre": "node scripts/preprocess-svg.cjs",
+    "icons:build": "npx svgr --config-file .svgrrc.cjs -d src/design-system/icons/components src/design-system/icons/assets --no-prettier",
+    "icons:format": "npx prettier --write src/design-system/icons/components",
+    "icons:index": "node scripts/generate-icons.cjs",
+    "icons": "npm run icons:pre && npm run icons:build && npm run icons:format && npm run icons:index",
+    "assets": "node scripts/generate-assets.cjs"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.9.0",
+    "@tanstack/react-query": "^5.62.7",
+    "axios": "^1.7.9",
+    "clsx": "^2.1.1",
+    "next": "^16.1.6",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-hook-form": "^7.54.2",
+    "socket.io-client": "^4.8.1",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^3.24.1",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@svgr/cli": "^8.1.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1",
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
