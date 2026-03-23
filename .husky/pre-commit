@@ -1,1 +1,0 @@
-cd pet-sitter-clients/web/react-rest && npx lint-staged

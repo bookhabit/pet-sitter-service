@@ -36,7 +36,7 @@
 ### 단 하나의 진실 원천 (SSOT)
 
 ```
-모든 비즈니스 로직과 API 명세의 기준 = pet-sitter-server/ (NestJS)
+모든 비즈니스 로직과 API 명세의 기준 = servers/nest-server/ (NestJS)
 모든 요구사항의 기준               = REQUIREMENTS.md
 모든 설계 원칙의 기준              = STANDARDS.md
 ```
@@ -89,30 +89,33 @@ React의 usePetSitterList() ↔ Flutter의 PetSitterNotifier ↔ Android의 PetS
 ## 3. 전체 기술 스택 지도
 
 ```
-pet-sitter-server/                    ← NestJS (기준 서버, 이미 완성)
+Petsitter-Master/
+├── servers/                          ← API 서버 (Backend)
+│   ├── nest-server/                  ← NestJS (기준 서버, 이미 완성)
+│   ├── go-server/                    ← Go + Gin
+│   └── spring-server/                ← Spring Boot 3 + Java 21
 │
-├── [대안 서버]
-│   ├── pet-sitter-go-server/         ← Go + Gin
-│   └── pet-sitter-spring-server/     ← Spring Boot 3 + Java 21
+├── clients/                          ← 화면을 보여주는 클라이언트 (Frontend)
+│   ├── web/
+│   │   ├── react-web/                ← React + REST (기준 클라이언트, 이미 완성)
+│   │   ├── react-graphql/            ← React + GraphQL
+│   │   ├── next-web/                 ← Next.js + REST
+│   │   └── next-graphql/             ← Next.js + GraphQL
+│   └── app/
+│       ├── expo-app/                 ← Expo (React Native + TypeScript)
+│       ├── flutter-app/              ← Flutter + Dart
+│       ├── android/                  ← Android + Jetpack Compose + Kotlin
+│       └── ios/                      ← iOS + SwiftUI + Swift
 │
-├── [웹 클라이언트 — SPA]
-│   └── pet-sitter-clients/web/
-│       ├── react-rest/               ← React + REST (기준 클라이언트, 이미 완성)
-│       ├── react-graphql/            ← React + GraphQL
-│       ├── nextjs-rest/              ← Next.js + REST
-│       └── nextjs-graphql/           ← Next.js + GraphQL
+├── fullstack/                        ← 화면 + 서버 일체형 (Monolithic)
+│   ├── php-fs/                       ← PHP 8.2 (순수 PHP)
+│   ├── flask-fs/                     ← Python + Flask
+│   └── jsp-fs/                       ← Java + JSP + Tomcat
 │
-├── [웹 클라이언트 — 서버사이드]
-│   ├── pet-sitter-php/               ← PHP 8.2 (순수 PHP)
-│   ├── pet-sitter-flask/             ← Python + Flask
-│   └── pet-sitter-jsp/               ← Java + JSP + Tomcat
-│
-└── [모바일 클라이언트]
-    └── pet-sitter-clients/mobile/
-        ├── expo/                     ← Expo (React Native + TypeScript)
-        ├── flutter/                  ← Flutter + Dart
-        ├── android/                  ← Android + Jetpack Compose + Kotlin
-        └── ios/                      ← iOS + SwiftUI + Swift
+├── docs/                             ← API 명세 (Swagger), DB 설계 (ERD)
+├── REQUIREMENTS.md                   ← 전체 요구사항
+├── STANDARDS.md                      ← 기술 독립적 설계 원칙
+└── GUIDE.md                          ← 이 파일
 ```
 
 ### 각 스택의 위치
@@ -132,12 +135,12 @@ pet-sitter-server/                    ← NestJS (기준 서버, 이미 완성)
 
 | 문서                | 위치                                      | 용도                                                     |
 | ------------------- | ----------------------------------------- | -------------------------------------------------------- |
-| **REQUIREMENTS.md** | `/REQUIREMENTS.md`                        | 전체 요구사항, 도메인 모델, API 엔드포인트 목록          |
-| **STANDARDS.md**    | `/STANDARDS.md`                           | 기술 독립적 설계 원칙 (SRP, 에러 처리, 디자인 시스템 등) |
-| **NestJS 레퍼런스** | `/pet-sitter-server/`                     | API 구현 방식, JWT 흐름, Socket.IO 채팅, DTO 구조        |
-| **DB 스키마**       | `/pet-sitter-server/prisma/schema.prisma` | 테이블 구조, 유니크 제약, Enum 정의                      |
-| **React 레퍼런스**  | `/pet-sitter-clients/web/react-rest/`     | SRP 아키텍처, API 컨벤션, 에러 처리 패턴                 |
-| **각 스택 PLAN.md** | `{프로젝트}/PLAN.md`                      | 해당 기술 스택의 상세 구현 계획                          |
+| **REQUIREMENTS.md** | `REQUIREMENTS.md`                              | 전체 요구사항, 도메인 모델, API 엔드포인트 목록          |
+| **STANDARDS.md**    | `STANDARDS.md`                                 | 기술 독립적 설계 원칙 (SRP, 에러 처리, 디자인 시스템 등) |
+| **NestJS 레퍼런스** | `servers/nest-server/`                         | API 구현 방식, JWT 흐름, Socket.IO 채팅, DTO 구조        |
+| **DB 스키마**       | `servers/nest-server/prisma/schema.prisma`     | 테이블 구조, 유니크 제약, Enum 정의                      |
+| **React 레퍼런스**  | `clients/web/react-web/`                       | SRP 아키텍처, API 컨벤션, 에러 처리 패턴                 |
+| **각 스택 PLAN.md** | `{프로젝트}/PLAN.md`                           | 해당 기술 스택의 상세 구현 계획                          |
 
 ---
 
@@ -244,20 +247,20 @@ pet-sitter-server/                    ← NestJS (기준 서버, 이미 완성)
 
 #### NestJS — 기준 서버 (이미 완성)
 
-참고: `pet-sitter-server/`
+참고: `servers/nest-server/`
 
 - TypeScript, Prisma ORM, PostgreSQL, JWT, Socket.IO
 
 #### Go + Gin
 
-참고: `pet-sitter-go-server/PLAN.md`
+참고: `servers/go-server/PLAN.md`
 
 - 학습 포인트: Go의 명시적 에러 반환, goroutine, 단일 바이너리 빌드
 - NestJS 대비: 의존성 주입 없음 → 직접 구조체 조합
 
 #### Spring Boot 3
 
-참고: `pet-sitter-spring-server/PLAN.md`
+참고: `servers/spring-server/PLAN.md`
 
 - 학습 포인트: Spring IoC/DI 컨테이너, JPA 연관관계, Flyway 마이그레이션
 - NestJS 대비: STOMP WebSocket (Socket.IO 불가), Bean Validation, @PreAuthorize
@@ -269,20 +272,20 @@ pet-sitter-server/                    ← NestJS (기준 서버, 이미 완성)
 
 #### React + REST — 기준 클라이언트 (이미 완성)
 
-참고: `pet-sitter-clients/web/react-rest/`
+참고: `clients/web/react-web/`
 
 - SRP 아키텍처: Schema → Service → Query Hook → Logic Hook → Container → View
 - TanStack Query, Zod, React Hook Form, design-system
 
 #### React + GraphQL
 
-참고: `pet-sitter-clients/web/react-graphql/`
+참고: `clients/web/react-graphql/`
 
 - 학습 포인트: REST와 GraphQL의 차이, Apollo Client 캐시, N+1 문제
 
 #### Next.js + REST / GraphQL
 
-참고: `pet-sitter-clients/web/nextjs-rest/`, `nextjs-graphql/`
+참고: `clients/web/next-web/`, `clients/web/next-graphql/`
 
 - 학습 포인트: SSR vs CSR vs ISR, Server Component vs Client Component, App Router
 
@@ -292,21 +295,21 @@ pet-sitter-server/                    ← NestJS (기준 서버, 이미 완성)
 
 #### PHP 8.2
 
-참고: `pet-sitter-php/PLAN.md`
+참고: `fullstack/php-fs/PLAN.md`
 
-- 학습 포인트: PHP 라이프사이클, $\_SESSION, Guzzle HTTP, 템플릿 렌더링
+- 학습 포인트: PHP 라이프사이클, $_SESSION, Guzzle HTTP, 템플릿 렌더링
 - 채팅: PHP는 WebSocket 서버 역할 불가 → JS에서 socket.io-client 직접 사용
 
 #### Flask (Python)
 
-참고: `pet-sitter-flask/PLAN.md`
+참고: `fullstack/flask-fs/PLAN.md`
 
 - 학습 포인트: WSGI, Blueprint, Jinja2 템플릿, 데코레이터 패턴
 - Python의 @login_required 데코레이터가 NestJS Guard와 같은 역할
 
 #### JSP + Servlet (Java)
 
-참고: `pet-sitter-jsp/PLAN.md`
+참고: `fullstack/jsp-fs/PLAN.md`
 
 - 학습 포인트: Servlet 라이프사이클, Filter Chain, JSTL, HttpSession
 - Java 21 HttpClient (내장 라이브러리, 외부 의존성 불필요)
@@ -317,28 +320,28 @@ pet-sitter-server/                    ← NestJS (기준 서버, 이미 완성)
 
 #### Expo (React Native + TypeScript)
 
-참고: `pet-sitter-clients/mobile/expo/PLAN.md`
+참고: `clients/app/expo-app/PLAN.md`
 
 - 학습 포인트: React 웹과 모바일의 차이, expo-secure-store, 네이티브 모듈
-- react-rest와 같은 SRP 아키텍처 그대로 적용 (가장 이식성 높음)
+- react-web과 같은 SRP 아키텍처 그대로 적용 (가장 이식성 높음)
 
 #### Flutter (Dart)
 
-참고: `pet-sitter-clients/mobile/flutter/PLAN.md`
+참고: `clients/app/flutter-app/PLAN.md`
 
 - 학습 포인트: Widget 트리, Dart null-safety, Riverpod AsyncValue, build_runner
 - 학습 난이도: Dart 언어 + Flutter 위젯 시스템 동시 학습 필요
 
 #### Android (Jetpack Compose + Kotlin)
 
-참고: `pet-sitter-clients/mobile/android/PLAN.md`
+참고: `clients/app/android/PLAN.md`
 
 - 학습 포인트: Compose의 선언적 UI, Hilt DI, Coroutines + Flow, Paging 3
 - 학습 난이도: Android 플랫폼 이해 필요 (Activity/Fragment 개념)
 
 #### iOS (SwiftUI + Swift)
 
-참고: `pet-sitter-clients/mobile/ios/PLAN.md`
+참고: `clients/app/ios/PLAN.md`
 
 - 학습 포인트: Swift Actor (thread-safety), @Observable, URLSession async/await
 - 학습 난이도: Swift 언어 + Apple 생태계 이해 필요
