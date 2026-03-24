@@ -1,0 +1,170 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# libs.versions.toml — Version Catalog (버전 카탈로그)
+#
+# Gradle 7.4+에서 도입된 의존성 중앙 관리 파일.
+# 모든 라이브러리 버전을 이 파일 한 곳에서 관리하여
+# 버전 충돌 방지 및 업그레이드를 일관되게 처리할 수 있다.
+#
+# 구조:
+#   [versions]   — 버전 문자열 상수 정의
+#   [libraries]  — 라이브러리 좌표(group:name:version) 정의
+#   [plugins]    — Gradle 플러그인 정의
+#
+# 사용법: build.gradle.kts 에서 libs.xxx 형태로 참조
+#   implementation(libs.retrofit)
+#   alias(libs.plugins.hilt)
+# ─────────────────────────────────────────────────────────────────────────────
+
+[versions]
+# Android Gradle Plugin — 빌드 도구 버전 (compileSdk 35 지원은 8.7+ 권장)
+agp                 = "8.5.2"
+
+# Kotlin — 언어 버전 (KSP, Compose Compiler 버전과 반드시 맞춰야 함)
+kotlin              = "2.0.0"
+
+# KSP (Kotlin Symbol Processing) — kotlin 버전과 쌍으로 고정
+# 형식: {kotlin 버전}-{ksp 버전}
+ksp                 = "2.0.0-1.0.22"
+
+# Compose BOM (Bill of Materials) — Compose 라이브러리 버전을 한 번에 관리
+# BOM 버전 하나만 지정하면 compose-ui, material3 등의 버전이 자동으로 결정됨
+compose-bom         = "2024.06.00"
+
+# Hilt — Dagger 기반 DI 프레임워크
+hilt                = "2.51.1"
+
+# Hilt Navigation Compose — hiltViewModel() 헬퍼 제공
+hilt-navigation     = "1.2.0"
+
+# Retrofit — HTTP 클라이언트 (타입 안전 REST API)
+retrofit            = "2.11.0"
+
+# OkHttp — Retrofit의 기반 HTTP 엔진 + 인터셉터(AuthInterceptor, LoggingInterceptor)
+okhttp              = "4.12.0"
+
+# kotlinx.serialization — JSON 직렬화/역직렬화 (Gson 대신 사용)
+kotlinx-serial      = "1.7.1"
+
+# Paging3 — 대용량 목록 페이지네이션
+paging              = "3.3.0"
+
+# Coil3 — Kotlin-first 이미지 로딩 라이브러리 (Glide 대안)
+coil                = "3.0.0"
+
+# Navigation Compose — Compose 전용 화면 전환 라이브러리
+navigation-compose  = "2.8.0"
+
+# Security Crypto — EncryptedSharedPreferences (AES256_GCM 토큰 저장)
+# alpha 버전이지만 현재 안정적인 실무 표준
+security-crypto     = "1.1.0-alpha06"
+
+# Lifecycle — ViewModel, LiveData, collectAsStateWithLifecycle 등
+lifecycle           = "2.8.3"
+
+# Coroutines Android — Flow, suspend, Dispatchers.Main 등 비동기 처리
+coroutines          = "1.8.1"
+
+# Socket.IO Client — 실시간 채팅 WebSocket 통신
+socket-io           = "2.1.0"
+
+# AndroidX Core KTX — Context, Bundle 등 Android API의 Kotlin 확장
+core-ktx            = "1.13.1"
+
+# Activity Compose — ComponentActivity.setContent {} 진입점 제공
+activity-compose    = "1.9.1"
+
+
+[libraries]
+# ── AndroidX Core ─────────────────────────────────────────────────────────────
+# Kotlin 친화적 Android API 확장 (context.getSystemService<T>() 등)
+core-ktx                = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
+# Compose 앱의 Activity 진입점 — setContent {} 제공
+activity-compose        = { group = "androidx.activity", name = "activity-compose", version.ref = "activity-compose" }
+
+# ── Compose BOM ───────────────────────────────────────────────────────────────
+# BOM을 platform()으로 선언하면 하위 Compose 라이브러리들의 버전 자동 결정
+compose-bom             = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
+# UI 기본 — Modifier, Layout, 기본 컴포넌트
+compose-ui              = { group = "androidx.compose.ui", name = "ui" }
+# 그래픽 관련 — Color, Shape, Brush 등
+compose-ui-graphics     = { group = "androidx.compose.ui", name = "ui-graphics" }
+# Android Studio Preview (@Preview 어노테이션) — 릴리즈 포함
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+# Material Design 3 컴포넌트 — Button, TextField, TopAppBar, NavigationBar 등
+compose-material3       = { group = "androidx.compose.material3", name = "material3" }
+# Layout Inspector + Preview 실제 렌더링 — debug 빌드에만 포함
+compose-ui-tooling      = { group = "androidx.compose.ui", name = "ui-tooling" }
+
+# ── Navigation ────────────────────────────────────────────────────────────────
+# NavHost, composable(), rememberNavController() — Compose 전용 네비게이션
+navigation-compose      = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose" }
+
+# ── Lifecycle ─────────────────────────────────────────────────────────────────
+# ViewModel — viewModelScope, StateFlow 기반 상태 관리
+lifecycle-viewmodel     = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
+# Lifecycle Runtime — repeatOnLifecycle, launchWhenStarted 등
+lifecycle-runtime       = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+# collectAsStateWithLifecycle — Flow → Compose State 변환 (권장 방식)
+lifecycle-compose       = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
+
+# ── Hilt (DI) ─────────────────────────────────────────────────────────────────
+# Hilt 런타임 — @HiltAndroidApp, @AndroidEntryPoint, @Singleton 등
+hilt-android            = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+# Hilt 컴파일러 — KSP로 DI 코드 자동 생성 (ksp() 스코프로 선언)
+hilt-compiler           = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+# hiltViewModel() — Compose에서 ViewModel을 Hilt로 주입할 때 사용
+hilt-navigation         = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hilt-navigation" }
+
+# ── Network ───────────────────────────────────────────────────────────────────
+# Retrofit — interface + 어노테이션으로 REST API 호출 코드 자동 생성
+retrofit                = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+# Retrofit × kotlinx.serialization 컨버터 — JSON ↔ @Serializable 데이터 클래스 변환
+retrofit-kotlinx        = { group = "com.jakewharton.retrofit", name = "retrofit2-kotlinx-serialization-converter", version = "1.0.0" }
+# OkHttp — Retrofit 기반 HTTP 엔진
+okhttp                  = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+# HttpLoggingInterceptor — 요청/응답 로그 출력 (디버그용)
+okhttp-logging          = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+
+# ── Serialization ─────────────────────────────────────────────────────────────
+# @Serializable 어노테이션으로 JSON 직렬화 — Gson 대비 빠르고 null-safe
+kotlinx-serial          = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serial" }
+
+# ── Coroutines ────────────────────────────────────────────────────────────────
+# Dispatchers.Main — UI 스레드 코루틴 (Android 전용)
+coroutines-android      = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+
+# ── Paging 3 ──────────────────────────────────────────────────────────────────
+# 페이지네이션 핵심 — PagingSource, Pager, PagingData
+paging-runtime          = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
+# collectAsLazyPagingItems() — Compose에서 PagingData 사용
+paging-compose          = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
+
+# ── Image Loading ─────────────────────────────────────────────────────────────
+# AsyncImage() — Compose에서 URL 이미지 로딩
+coil-compose            = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+# OkHttp 기반 네트워크 이미지 fetcher — coil-compose와 함께 사용
+coil-network            = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
+
+# ── Security ──────────────────────────────────────────────────────────────────
+# EncryptedSharedPreferences — AES256_GCM으로 토큰 암호화 저장
+# iOS Keychain / expo-secure-store / flutter_secure_storage 의 Android 대응
+security-crypto         = { group = "androidx.security", name = "security-crypto", version.ref = "security-crypto" }
+
+# ── Socket.IO ─────────────────────────────────────────────────────────────────
+# 실시간 채팅 — WebSocket 연결 관리
+socket-io               = { group = "io.socket", name = "socket.io-client", version.ref = "socket-io" }
+
+
+[plugins]
+# Android Application Plugin (AGP) — android {} 블록 제공, APK/AAB 빌드
+android-application     = { id = "com.android.application", version.ref = "agp" }
+# Kotlin Android — Kotlin 소스 컴파일 (java → kotlin 전환)
+kotlin-android          = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# Kotlin Compose Compiler — @Composable 함수를 최적화된 UI 코드로 변환
+kotlin-compose          = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+# Kotlin Serialization — @Serializable 어노테이션 처리 (컴파일 타임 코드 생성)
+kotlin-serialization    = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+# Hilt Android Gradle Plugin — @HiltAndroidApp 컴포넌트 생성
+hilt                    = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+# KSP — Hilt/Room 어노테이션 프로세서 (kapt 대체, 빌드 속도 개선)
+ksp                     = { id = "com.google.devtools.ksp", version.ref = "ksp" }

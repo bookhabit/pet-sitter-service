@@ -1,0 +1,39 @@
+# ─── Build outputs ────────────────────────────────────────────────────────────
+/build/
+app/build/
+
+# ─── Gradle ───────────────────────────────────────────────────────────────────
+.gradle/
+# gradle-wrapper.jar 는 재생성 가능 (gradle wrapper 명령으로 생성)
+# gradlew, gradlew.bat 는 커밋 포함 (CI에서 필요)
+gradle/wrapper/gradle-wrapper.jar
+
+# ─── Android Studio ───────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+# SDK 경로는 머신마다 다름
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ─── Secrets / 환경 설정 ──────────────────────────────────────────────────────
+# 서명 키 정보
+keystore.properties
+*.keystore
+*.jks
+release.properties
+
+# ─── APK / AAB ────────────────────────────────────────────────────────────────
+*.apk
+*.aab
+*.ap_
+
+# ─── ProGuard ─────────────────────────────────────────────────────────────────
+/app/proguard/
+
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

@@ -1,0 +1,2 @@
+-keep class com.petsitter.** { *; }
+-keep class kotlinx.serialization.** { *; }
