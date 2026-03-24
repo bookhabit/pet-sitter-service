@@ -1,0 +1,80 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# project.yml — XcodeGen 프로젝트 명세
+#
+# XcodeGen: YAML로 Xcode 프로젝트(.xcodeproj)를 선언적으로 생성하는 도구.
+# .xcodeproj는 git에서 충돌이 잦아 커밋하지 않고,
+# 이 파일만 커밋하여 팀원이 `xcodegen generate` 한 번으로 프로젝트 재생성.
+#
+# 사용법:
+#   xcodegen generate          # 프로젝트 생성 (최초 또는 변경 시)
+#   open PetSitter.xcodeproj   # Xcode에서 열기
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: PetSitter
+options:
+  # 최소 지원 iOS 버전 — @Observable, NavigationStack 등 iOS 17 필수
+  deploymentTarget:
+    iOS: "17.0"
+  # Swift 버전
+  defaultConfig: Debug
+  xcodeVersion: "16.0"
+  # Swift 6 Strict Concurrency (Sendable 체크 포함)
+  # 빌드 설정에서 SWIFT_VERSION 지정
+  bundleIdPrefix: com.petsitter
+
+targets:
+  PetSitter:
+    type: application
+    platform: iOS
+
+    # ── 소스 파일 ──────────────────────────────────────────────────────────────
+    # PetSitter/ 하위 모든 .swift 파일을 자동 포함
+    sources:
+      - path: PetSitter
+        excludes:
+          - "**/*.DS_Store"
+
+    # ── Info.plist ─────────────────────────────────────────────────────────────
+    # xcodegen이 자동 생성 (Xcode 프로젝트 외부 plist 불필요)
+    info:
+      path: PetSitter/Info.plist
+      properties:
+        CFBundleDisplayName: PetSitter
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen:
+          UIColorName: ""
+        # ── API Base URL 환경 설정 ────────────────────────────────────────────
+        # Build Settings → User-Defined → API_BASE_URL 에서 주입
+        # iOS 시뮬레이터: 기본값 빈 문자열 (APIConfig에서 localhost 사용)
+        # 실제 기기:      API_BASE_URL = http://192.168.x.x:3000
+        API_BASE_URL: "$(API_BASE_URL)"
+        NSPhotoLibraryUsageDescription: "프로필 사진 및 반려동물 사진 업로드에 사용됩니다"
+
+    # ── 빌드 설정 ──────────────────────────────────────────────────────────────
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.petsitter.app
+        # Swift 6 Strict Concurrency
+        SWIFT_STRICT_CONCURRENCY: complete
+        # 에뮬레이터/시뮬레이터 기본 API URL (빈 문자열 → APIConfig에서 localhost 사용)
+        API_BASE_URL: ""
+      configs:
+        Debug:
+          DEBUG_INFORMATION_FORMAT: dwarf
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+          # 디버그에서 로컬 서버 기본값
+          API_BASE_URL: ""
+        Release:
+          SWIFT_OPTIMIZATION_LEVEL: "-O"
+
+    # ── 프레임워크 링킹 ────────────────────────────────────────────────────────
+    # Security.framework: KeychainStorage에서 사용
+    dependencies:
+      - sdk: Security.framework
+
+    # ── 빌드 스크립트 ──────────────────────────────────────────────────────────
+    preBuildScripts: []
+    postBuildScripts: []

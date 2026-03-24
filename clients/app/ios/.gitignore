@@ -1,0 +1,37 @@
+# ─── Xcode 빌드 산출물 ────────────────────────────────────────────────────────
+build/
+DerivedData/
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.xcarchive
+
+# ─── Xcode 프로젝트 파일 ─────────────────────────────────────────────────────
+# .xcodeproj 는 커밋하지 않음 — project.yml + xcodegen generate 로 재생성
+# 팀원 온보딩: xcodegen generate → open PetSitter.xcodeproj
+*.xcodeproj/
+# Info.plist 는 xcodegen이 자동 생성 — 커밋 불필요
+PetSitter/Info.plist
+
+# ─── Xcode 사용자 설정 (머신마다 다름) ──────────────────────────────────────
+xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# ─── Swift Package Manager ───────────────────────────────────────────────────
+.build/
+.swiftpm/
+# Package.resolved 는 커밋 포함 (팀 의존성 버전 고정용)
+
+# ─── CocoaPods (미사용이지만 혹시 모를 경우) ─────────────────────────────────
+Pods/
+Podfile.lock
+
+# ─── 환경 설정 ───────────────────────────────────────────────────────────────
+*.env
+.env.*
+# xcconfig 파일은 커밋 여부 팀별 정책에 따름
+Secrets.xcconfig
+
+# ─── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
