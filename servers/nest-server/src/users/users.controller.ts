@@ -6,7 +6,6 @@ import {
   Param,
   Delete,
   Put,
-  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { UsersService } from './users.service';
@@ -21,8 +20,6 @@ import { JobApplicationModel } from '../job-application/models/job-application.m
 @ApiBearerAuth('access-token')
 @Controller('users')
 export class UsersController {
-  private readonly logger = new Logger(UsersController.name);
-
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
@@ -32,7 +29,6 @@ export class UsersController {
   @ApiResponse({ status: 400, description: '유효성 검증 실패' })
   @ApiResponse({ status: 409, description: '이미 존재하는 이메일' })
   create(@Body() createUserDto: CreateUserDto) {
-    this.logger.log(`POST /users 요청 수신: ${JSON.stringify(createUserDto)}`);
     return this.usersService.create(createUserDto);
   }
 

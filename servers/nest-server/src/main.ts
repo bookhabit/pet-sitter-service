@@ -5,6 +5,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import * as express from 'express';
 import { AppModule } from './app.module';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -27,6 +28,9 @@ async function bootstrap() {
 
   // 업로드 파일 정적 서빙
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
+
+  // 전역 로깅 인터셉터
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   // 전역 ValidationPipe 설정
   app.useGlobalPipes(
