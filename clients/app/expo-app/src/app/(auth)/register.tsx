@@ -15,7 +15,6 @@ import { useRegisterForm } from "@/hooks/useRegisterForm";
 
 export default function RegisterScreen() {
   const { control, errors, isLoading, onSubmit } = useRegisterForm();
-  console.log("erros", errors);
 
   return (
     <KeyboardAvoidingView

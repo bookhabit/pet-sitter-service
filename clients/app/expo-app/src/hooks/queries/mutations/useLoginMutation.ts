@@ -1,8 +1,8 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation } from "@tanstack/react-query";
 
-import { LoginInput } from '@/schemas/userSchema';
-import { authService } from '@/services/authService';
-import { useAuthStore } from '@/store/useAuthStore';
+import { LoginInput } from "@/schemas/userSchema";
+import { authService } from "@/services/authService";
+import { useAuthStore } from "@/store/useAuthStore";
 
 // useLoginMutation: 로그인 API 호출 상태 관리
 // - isPending: 로딩 상태 → 버튼 비활성화
@@ -13,21 +13,9 @@ export function useLoginMutation() {
 
   return useMutation({
     mutationFn: (data: LoginInput) => authService.login(data),
-    onSuccess: async (response) => {
+    onSuccess: async ({ accessToken, refreshToken, user }) => {
       // 로그인 성공 → SecureStore + Zustand 상태 동시 업데이트
-      await login(
-        {
-          accessToken: response.access_token,
-          refreshToken: response.refresh_token,
-        },
-        {
-          id: response.user.id,
-          email: response.user.email,
-          name: response.user.name,
-          role: response.user.role,
-          profileImage: response.user.profileImage,
-        },
-      );
+      await login({ accessToken, refreshToken }, user);
     },
   });
 }
