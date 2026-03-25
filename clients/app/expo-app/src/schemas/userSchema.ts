@@ -23,8 +23,8 @@ export const loginResponseSchema = z.object({
 export const registerRequestSchema = z.object({
   email: z.string().email('올바른 이메일을 입력해주세요'),
   password: z.string().min(8, '비밀번호는 8자 이상이어야 합니다'),
-  name: z.string().min(1, '이름을 입력해주세요'),
-  role: z.enum(['PetOwner', 'PetSitter']),
+  full_name: z.string().min(1, '이름을 입력해주세요'),
+  roles: z.array(z.enum(['PetOwner', 'PetSitter'])).min(1),
 });
 
 export const loginRequestSchema = z.object({

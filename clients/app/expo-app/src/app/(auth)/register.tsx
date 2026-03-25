@@ -1,18 +1,26 @@
-import { Link } from 'expo-router';
-import React from 'react';
-import { Controller } from 'react-hook-form';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Link } from "expo-router";
+import React from "react";
+import { Controller } from "react-hook-form";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 
-import { Button, Spacing, Text, TextInput, colors } from '@/design-system';
-import { useRegisterForm } from '@/hooks/useRegisterForm';
+import { Button, Spacing, Text, TextInput, colors } from "@/design-system";
+import { useRegisterForm } from "@/hooks/useRegisterForm";
 
 export default function RegisterScreen() {
   const { control, errors, isLoading, onSubmit } = useRegisterForm();
+  console.log("erros", errors);
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -30,29 +38,33 @@ export default function RegisterScreen() {
         <Spacing size={32} />
 
         {/* 역할 선택 */}
-        <Text size="b2" style={{ fontWeight: '500' }}>
+        <Text size="b2" style={{ fontWeight: "500" }}>
           역할
         </Text>
         <Spacing size={8} />
         <Controller
           control={control}
-          name="role"
+          name="roles"
           render={({ field: { onChange, value } }) => (
             <View style={styles.roleRow}>
-              {(['PetOwner', 'PetSitter'] as const).map((role) => (
+              {(["PetOwner", "PetSitter"] as const).map((role) => (
                 <Pressable
                   key={role}
-                  onPress={() => onChange(role)}
-                  style={[styles.roleButton, value === role && styles.roleButtonActive]}
+                  onPress={() => onChange([role])}
+                  style={[
+                    styles.roleButton,
+                    value[0] === role && styles.roleButtonActive,
+                  ]}
                 >
                   <Text
                     size="b2"
                     style={{
-                      color: value === role ? colors.white : colors.textSecondary,
-                      fontWeight: '600',
+                      color:
+                        value[0] === role ? colors.white : colors.textSecondary,
+                      fontWeight: "600",
                     }}
                   >
-                    {role === 'PetOwner' ? '반려동물 주인' : '펫시터'}
+                    {role === "PetOwner" ? "반려동물 주인" : "펫시터"}
                   </Text>
                 </Pressable>
               ))}
@@ -64,7 +76,7 @@ export default function RegisterScreen() {
 
         <Controller
           control={control}
-          name="name"
+          name="full_name"
           render={({ field: { onChange, onBlur, value } }) => (
             <TextInput
               label="이름"
@@ -72,7 +84,7 @@ export default function RegisterScreen() {
               onChangeText={onChange}
               onBlur={onBlur}
               value={value}
-              error={errors.name?.message}
+              error={errors.full_name?.message}
             />
           )}
         />
@@ -133,10 +145,13 @@ export default function RegisterScreen() {
 
         <View style={styles.linkRow}>
           <Text size="b2" color="textSecondary">
-            이미 계정이 있으신가요?{' '}
+            이미 계정이 있으신가요?{" "}
           </Text>
           <Link href="/(auth)/login" asChild>
-            <Text size="b2" style={{ color: colors.primary, fontWeight: '600' }}>
+            <Text
+              size="b2"
+              style={{ color: colors.primary, fontWeight: "600" }}
+            >
               로그인
             </Text>
           </Link>
@@ -154,16 +169,16 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     paddingBottom: 40,
   },
-  header: { alignItems: 'flex-start' },
-  roleRow: { flexDirection: 'row', gap: 12 },
+  header: { alignItems: "flex-start" },
+  roleRow: { flexDirection: "row", gap: 12 },
   roleButton: {
     flex: 1,
     height: 48,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.grey200,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.background,
   },
   roleButtonActive: {
@@ -171,8 +186,8 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   linkRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

@@ -15,7 +15,13 @@ async function bootstrap() {
 
   // CORS: React 개발 서버 허용
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    origin: [
+      'http://localhost:5173', // Vite (React)
+      'http://localhost:3000', // CRA (React)
+      /^http:\/\/localhost:808[0-9]$/, // http://localhost:8080 ~ 8089 모두 허용
+      /^http:\/\/10\.0\.2\.2:808[0-9]$/, // Android 에뮬레이터용 (필수!)
+      /^http:\/\/192\.168\.\d+\.\d+:\d+$/, // 로컬 Wi-Fi 실제 디바이스용
+    ],
     credentials: true,
   });
 
